@@ -11,6 +11,7 @@ import price_charting_card
 import pokemon_card
 import website_link
 import card_market_stats
+import psycopg2
 
 c = CurrencyConverter()
 
@@ -62,6 +63,22 @@ priceChartingLinks = [
     website_link.WebsiteLink("sv11w", "https://www.pricecharting.com/console/pokemon-japanese-white-flare?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86),
     website_link.WebsiteLink("m1l", "https://www.pricecharting.com/console/pokemon-japanese-mega-brave?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
     website_link.WebsiteLink("m1s", "https://www.pricecharting.com/console/pokemon-japanese-mega-symphonia?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
+]
+
+
+hareruyaArray = []
+hareruyaLinks = [
+    website_link.WebsiteLink("sv2a", "https://www.hareruya2.com/collections/612?filter.v.availability=1&sort_by=price-descending", 165),
+    website_link.WebsiteLink("sv7a", "https://www.hareruya2.com/collections/sv7a?filter.v.availability=1&sort_by=price-descending", 64),
+    website_link.WebsiteLink("sv8", "https://www.hareruya2.com/collections/sv8?filter.v.availability=1&sort_by=price-descending", 106),
+    website_link.WebsiteLink("sv8a", "https://www.hareruya2.com/collections/sv8a?filter.v.availability=1&sort_by=price-descending", 187),
+    website_link.WebsiteLink("sv9", "https://www.hareruya2.com/collections/sv9?filter.v.availability=1&sort_by=price-descending", 100),
+    website_link.WebsiteLink("sv9a", "https://www.hareruya2.com/collections/sv9a?filter.v.availability=1&sort_by=price-descending", 63),
+    website_link.WebsiteLink("sv10", "https://www.hareruya2.com/collections/sv10?filter.v.availability=1&sort_by=price-descending", 98),
+    website_link.WebsiteLink("sv11b", "https://www.hareruya2.com/collections/sv11b?filter.v.availability=1&sort_by=price-descending", 86),
+    website_link.WebsiteLink("sv11w", "https://www.hareruya2.com/collections/sv11w?filter.v.availability=1&sort_by=price-descending", 86),
+    website_link.WebsiteLink("m1l", "https://www.hareruya2.com/collections/701?filter.v.availability=1&sort_by=price-descending", 63),
+    website_link.WebsiteLink("m1s", "https://www.hareruya2.com/collections/702?filter.v.availability=1&sort_by=price-descending", 63),
 ]
 
 cardMarketArray = []
@@ -284,6 +301,86 @@ async def torecacamp(num):
 
 
 
+async def hareruya(num):
+    translator = Translator()
+    hareruyaListingURL = hareruyaLinks[num].link
+    setAmount = hareruyaLinks[num].setAmount
+
+    print("Start of Hareruya")
+    for page in range(1, 7):
+
+        print("Page: " + str(page))
+        finalExit = False
+
+        hareruyaListingCurrURL = hareruyaLinks[num].link + "&page=" + str(page)
+        hareruyaResponse = requests.get(hareruyaListingURL, headers=HEADERS)
+        hareruyaResponse.encoding = "utf-8"
+
+        soup = BeautifulSoup(hareruyaResponse.text, "html.parser")
+        cards = soup.select("li.grid__item")
+
+        next_button = soup.select_one(
+            "a.pager_btn.pagination__item.pagination__item--prev.pagination__item-arrow.link.motion-reduce"
+        )
+
+        for card in cards:
+            try:
+                name = await translator.translate(
+                    card.select_one("h3.card__heading.h5").get_text(strip=True), src='ja', dest='en'
+                )
+
+                price_tag = card.select_one("span.figure").get_text(strip=True)
+                price = int(re.sub(r"\D", "", price_tag))
+
+                quantity_raw = card.select_one("div.product__inventory").get_text(strip=True)
+                quantity = int(re.search(r"\d+", quantity_raw).group())
+
+                link = card.select_one("a.full-unstyled-link").get("href")
+
+                if ("*Status" not in name.text
+                        and "(State" not in name.text
+                        and "(Condition" not in name.text
+                        and "(C)" not in name.text
+                        and "(U)" not in name.text
+                        and "(R)" not in name.text
+                        and "(RR)" not in name.text
+                        and "(ACE)" not in name.text
+                        and "PSA10" not in name.text
+                        and "PSA9" not in name.text
+                        and int(setAmount) < int(re.search(r"(\d+)/\d+", name.text).group(1))
+                ):
+
+                    print(
+                        name.text,
+                        price,
+                        quantity,
+                        "https://www.hareruya2.com" + link,
+                        re.search(r"(\d+)/\d+", name.text).group(1),
+                    )
+
+                    hareruyaArray.append(
+                        pokemon_card.PokemonCard(
+                            name.text,
+                            price,
+                            quantity,
+                            "https://www.hareruya2.com" + link,
+                            re.search(r"(\d+)/\d+", name.text).group(1),
+                        )
+                    )
+
+            except:
+                print("Out of stock occurred")
+
+        if next_button:
+            time.sleep(random.uniform(2, 5))
+            print("Next Page")
+        else:
+            print("No more pages")
+            finalExit = True
+            break
+
+
+
 
 def marketPrice():
     print("Start of Market Price")
@@ -291,8 +388,12 @@ def marketPrice():
 
         cardrushPrice = 0
         cardrushQuantity = 0
+
         torecaPrice = 0
         torecaQuantity = 0
+
+        hareruyaPrice = 0
+        hareruyaQuantity = 0
 
         # Cardrush price
         try:
@@ -312,19 +413,35 @@ def marketPrice():
                     torecaQuantity = torecaCard.stock
                     break
         except:
-            print("Error when getting toreca price")
+            print("Error when getting Toreca price")
+
+        # Hareruya price
+        try:
+            for hareruyaCard in hareruyaArray:
+                if int(marketCard.card_number) == int(hareruyaCard.card_number):
+                    hareruyaPrice = hareruyaCard.price
+                    hareruyaQuantity = hareruyaCard.stock
+                    break
+
+        except:
+            print("Error when getting Hareruya price")
 
         print(
             # marketCard.image,
             # marketCard.link,
             marketCard.name,
             # marketCard.card_number,
+
             "$" + str(round(c.convert(marketCard.price, "USD", "CAD"), 2)),
+
             "$" + str(round(c.convert(cardrushPrice, "JPY", "CAD"), 2)),
             "#" + str(cardrushQuantity),
 
             "$" + str(round(c.convert(torecaPrice, "JPY", "CAD"), 2)),
             "#" + str(torecaQuantity),
+
+            "$" + str(round(c.convert(hareruyaPrice, "JPY", "CAD"), 2)),
+            "#" + str(hareruyaQuantity),
 
         )
         if int(cardrushPrice) != 0:
@@ -333,6 +450,9 @@ def marketPrice():
         if int(torecaPrice) != 0:
             print("TorecaCamp:", str(round(c.convert(marketCard.price, "USD", "CAD") / c.convert(torecaPrice, "JPY", "CAD"), 2)) + "%")
 
+        if int(hareruyaPrice) != 0:
+            print("Hareruya", str(round(c.convert(marketCard.price, "USD", "CAD") / c.convert(hareruyaPrice, "JPY", "CAD"), 2)) + "%")
+
 
         cardMarketArray.append(
             card_market_stats.CardMarketStats(
@@ -340,24 +460,33 @@ def marketPrice():
                 marketCard.link,
                 marketCard.name,
                 marketCard.card_number,
+
                 round(c.convert(marketCard.price, "USD", "CAD"), 2),
+
                 cardrushPrice,
                 cardrushQuantity,
+
                 torecaPrice,
-                torecaQuantity
+                torecaQuantity,
+
+                hareruyaPrice,
+                hareruyaQuantity
             )
         )
 
 
 
 
-setnum = 9
+setnum = 1
 
 asyncio.run(cardrush(setnum))
 print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
 
 asyncio.run(torecacamp(setnum))
 print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
+
+asyncio.run(hareruya(setnum))
+print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
 
 print("CR Array:", cardrushArray)
 print("TC Array:", torecaCampArray)
@@ -370,9 +499,15 @@ print(cardMarketArray[0].imageURL,
       cardMarketArray[0].siteURL,
       cardMarketArray[0].cardName,
       cardMarketArray[0].card_number,
+
       cardMarketArray[0].marketPrice,
+
       cardMarketArray[0].cardrushPrice,
       cardMarketArray[0].cardrushQuantity,
+
       cardMarketArray[0].torecacampPrice,
-      cardMarketArray[0].torecacampQuantity
+      cardMarketArray[0].torecacampQuantity,
+
+      cardMarketArray[0].hareruyaPrice,
+      cardMarketArray[0].hareruyaQuantity,
 )

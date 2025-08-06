@@ -1,11 +1,16 @@
 class CardMarketStats:
-    def __init__(self, imageURL, siteURL, cardName, card_number, marketPrice, cardrushPrice, cardrushQuantity, torecacampPrice, torecacampQuantity):
+    def __init__(self, imageURL, siteURL, cardName, card_number, marketPrice, cardrushPrice, cardrushQuantity, torecacampPrice, torecacampQuantity, hareruyaPrice, hareruyaQuantity):
         self.imageURL = imageURL
         self.siteURL = siteURL
         self.cardName = cardName
         self.card_number = card_number
         self.marketPrice = marketPrice,
+
         self.cardrushPrice = cardrushPrice,
         self.cardrushQuantity = cardrushQuantity
+
         self.torecacampPrice = torecacampPrice
         self.torecacampQuantity = torecacampQuantity
+
+        self.hareruyaPrice = hareruyaPrice
+        self.hareruyaQuantity = hareruyaQuantity
