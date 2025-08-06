@@ -7,47 +7,10 @@ import asyncio
 import re
 from currency_converter import CurrencyConverter
 
-
-
-class PriceChartingCard:
-    def __init__(self, name, price, link, image, card_number):
-        self.name = name
-        self.price = price
-        self.link = link
-        self.image = image
-        self.card_number = card_number
-
-
-class PokemonCard:
-    def __init__(self, name, price, stock, link, card_number):
-        self.name = name
-        self.price = price
-        self.stock = stock
-        self.link = link
-        self.card_number = card_number
-
-
-class WebsiteLink:
-    def __init__(self, set, link, setAmount):
-        self.set = set
-        self.link = link
-        self.setAmount = setAmount
-
-
-class CardMarketStats:
-    def __init__(self, imageURL, siteURL, cardName, card_number, marketPrice, cardrushPrice, cardrushQuantity, torecacampPrice, torecacampQuantity):
-        self.imageURL = imageURL
-        self.siteURL = siteURL
-        self.cardName = cardName
-        self.card_number = card_number
-        self.marketPrice = marketPrice,
-        self.cardrushPrice = cardrushPrice,
-        self.cardrushQuantity = cardrushQuantity
-        self.torecacampPrice = torecacampPrice
-        self.torecacampQuantity = torecacampQuantity
-
-
-# baseurl = "https://www.cardrush-pokemon.jp"
+import price_charting_card
+import pokemon_card
+import website_link
+import card_market_stats
 
 c = CurrencyConverter()
 
@@ -58,41 +21,47 @@ HEADERS = {
 
 cardrushArray = []
 cardrushLinks = [
-    WebsiteLink("sv2a", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=sv2a&num=100&img=120&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 165),
-    WebsiteLink("sv7a", "https://www.cardrush-pokemon.jp/product-group/409?num=100&available=1&img=120&order=desc", 64),
-    WebsiteLink("sv8", "https://www.cardrush-pokemon.jp/product-group/411?num=100&available=1&img=120&order=desc", 106),
-    WebsiteLink("sv8a", "https://www.cardrush-pokemon.jp/product-group/416?num=100&available=1&img=120&order=desc", 187),
-    WebsiteLink("sv9", "https://www.cardrush-pokemon.jp/product-group/427?num=100&available=1&img=120&order=desc", 100),
-    WebsiteLink("sv9a", "https://www.cardrush-pokemon.jp/product-group/449?num=100&available=1&img=120&order=desc", 63),
-    WebsiteLink("sv10", "https://www.cardrush-pokemon.jp/product-group/457?num=100&available=1&img=120&order=desc", 98),
-    WebsiteLink("sv11b", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11b&Submit=search", 86),
-    WebsiteLink("sv11w", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11w&Submit=search", 86),
+    website_link.WebsiteLink("sv2a", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=sv2a&num=100&img=120&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 165),
+    website_link.WebsiteLink("sv7a", "https://www.cardrush-pokemon.jp/product-group/409?num=100&available=1&img=120&order=desc", 64),
+    website_link.WebsiteLink("sv8", "https://www.cardrush-pokemon.jp/product-group/411?num=100&available=1&img=120&order=desc", 106),
+    website_link.WebsiteLink("sv8a", "https://www.cardrush-pokemon.jp/product-group/416?num=100&available=1&img=120&order=desc", 187),
+    website_link.WebsiteLink("sv9", "https://www.cardrush-pokemon.jp/product-group/427?num=100&available=1&img=120&order=desc", 100),
+    website_link.WebsiteLink("sv9a", "https://www.cardrush-pokemon.jp/product-group/449?num=100&available=1&img=120&order=desc", 63),
+    website_link.WebsiteLink("sv10", "https://www.cardrush-pokemon.jp/product-group/457?num=100&available=1&img=120&order=desc", 98),
+    website_link.WebsiteLink("sv11b", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11b&Submit=search", 86),
+    website_link.WebsiteLink("sv11w", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11w&Submit=search", 86),
+    website_link.WebsiteLink("m1l", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=m1l&num=100&img=160&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 63),
+    website_link.WebsiteLink("m1s", "https://www.cardrush-pokemon.jp/product-list?num=100&img=160&available=1&order=price-desc&keyword=m1s&Submit=search", 63),
 ]
 
 torecaCampArray = []
 torecaCampLinks = [
-    WebsiteLink("sv2a", "https://torecacamp-pokemon.com/collections/sv2a-%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89151?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 165),
-    WebsiteLink("sv7a", "https://torecacamp-pokemon.com/collections/sv7a-%E6%A5%BD%E5%9C%92%E3%83%89%E3%83%A9%E3%82%B4%E3%83%BC%E3%83%8A?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 64),
-    WebsiteLink("sv8", "https://torecacamp-pokemon.com/collections/sv8-%E8%B6%85%E9%9B%BB%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AB%E3%83%BC?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 106),
-    WebsiteLink("sv8a", "https://torecacamp-pokemon.com/collections/sv8a-%E3%83%86%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%AB%E3%83%95%E3%82%A7%E3%82%B9ex?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 187),
-    WebsiteLink("sv9", "https://torecacamp-pokemon.com/collections/sv9?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 100),
-    WebsiteLink("sv9a", "https://torecacamp-pokemon.com/collections/sv9a?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63),
-    WebsiteLink("sv10", "https://torecacamp-pokemon.com/collections/sv10?filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=&sort_by=price-descending", 98),
-    WebsiteLink("sv11b", "https://torecacamp-pokemon.com/collections/sv11b?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86),
-    WebsiteLink("sv11w", "https://torecacamp-pokemon.com/collections/sv11w?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86),
+    website_link.WebsiteLink("sv2a", "https://torecacamp-pokemon.com/collections/sv2a-%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89151?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 165),
+    website_link.WebsiteLink("sv7a", "https://torecacamp-pokemon.com/collections/sv7a-%E6%A5%BD%E5%9C%92%E3%83%89%E3%83%A9%E3%82%B4%E3%83%BC%E3%83%8A?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 64),
+    website_link.WebsiteLink("sv8", "https://torecacamp-pokemon.com/collections/sv8-%E8%B6%85%E9%9B%BB%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AB%E3%83%BC?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 106),
+    website_link.WebsiteLink("sv8a", "https://torecacamp-pokemon.com/collections/sv8a-%E3%83%86%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%AB%E3%83%95%E3%82%A7%E3%82%B9ex?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 187),
+    website_link.WebsiteLink("sv9", "https://torecacamp-pokemon.com/collections/sv9?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 100),
+    website_link.WebsiteLink("sv9a", "https://torecacamp-pokemon.com/collections/sv9a?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63),
+    website_link.WebsiteLink("sv10", "https://torecacamp-pokemon.com/collections/sv10?filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=&sort_by=price-descending", 98),
+    website_link.WebsiteLink("sv11b", "https://torecacamp-pokemon.com/collections/sv11b?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86),
+    website_link.WebsiteLink("sv11w", "https://torecacamp-pokemon.com/collections/sv11w?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86),
+    website_link.WebsiteLink("m1l", "https://torecacamp-pokemon.com/collections/m1l?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63),
+    website_link.WebsiteLink("m1s", "https://torecacamp-pokemon.com/collections/m1s?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63),
 ]
 
 priceChartingArray = []
 priceChartingLinks = [
-    WebsiteLink("sv2a", "https://www.pricecharting.com/console/pokemon-japanese-scarlet-&-violet-151?exclude-hardware=true&exclude-variants=true&in-collection=&model-number=&show-images=true&sort=highest-price&view=grid", 165),
-    WebsiteLink("sv7a", "https://www.pricecharting.com/console/pokemon-japanese-paradise-dragona?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 64),
-    WebsiteLink("sv8", "https://www.pricecharting.com/console/pokemon-japanese-super-electric-breaker?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 106),
-    WebsiteLink("sv8a", "https://www.pricecharting.com/console/pokemon-japanese-terastal-festival?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 187),
-    WebsiteLink("sv9", "https://www.pricecharting.com/console/pokemon-japanese-battle-partners?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 100),
-    WebsiteLink("sv9a", "https://www.pricecharting.com/console/pokemon-japanese-heat-wave-arena?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
-    WebsiteLink("sv10", "https://www.pricecharting.com/console/pokemon-japanese-glory-of-team-rocket?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 98),
-    WebsiteLink("sv11b", "https://www.pricecharting.com/console/pokemon-japanese-black-bolt?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86),
-    WebsiteLink("sv11w", "https://www.pricecharting.com/console/pokemon-japanese-white-flare?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86),
+    website_link.WebsiteLink("sv2a", "https://www.pricecharting.com/console/pokemon-japanese-scarlet-&-violet-151?exclude-hardware=true&exclude-variants=true&in-collection=&model-number=&show-images=true&sort=highest-price&view=grid", 165),
+    website_link.WebsiteLink("sv7a", "https://www.pricecharting.com/console/pokemon-japanese-paradise-dragona?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 64),
+    website_link.WebsiteLink("sv8", "https://www.pricecharting.com/console/pokemon-japanese-super-electric-breaker?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 106),
+    website_link.WebsiteLink("sv8a", "https://www.pricecharting.com/console/pokemon-japanese-terastal-festival?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 187),
+    website_link.WebsiteLink("sv9", "https://www.pricecharting.com/console/pokemon-japanese-battle-partners?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 100),
+    website_link.WebsiteLink("sv9a", "https://www.pricecharting.com/console/pokemon-japanese-heat-wave-arena?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
+    website_link.WebsiteLink("sv10", "https://www.pricecharting.com/console/pokemon-japanese-glory-of-team-rocket?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 98),
+    website_link.WebsiteLink("sv11b", "https://www.pricecharting.com/console/pokemon-japanese-black-bolt?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86),
+    website_link.WebsiteLink("sv11w", "https://www.pricecharting.com/console/pokemon-japanese-white-flare?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86),
+    website_link.WebsiteLink("m1l", "https://www.pricecharting.com/console/pokemon-japanese-mega-brave?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
+    website_link.WebsiteLink("m1s", "https://www.pricecharting.com/console/pokemon-japanese-mega-symphonia?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
 ]
 
 cardMarketArray = []
@@ -124,7 +93,7 @@ def priceCharting(num):
 
         if card_number != "N/A" and int(card_number) > int(priceChartingLinks[num].setAmount):
             priceChartingArray.append(
-                PriceChartingCard(
+                price_charting_card.PriceChartingCard(
                     name,
                     price,
                     link,
@@ -205,7 +174,7 @@ async def cardrush(num):
                     )
 
                     cardrushArray.append(
-                        PokemonCard(
+                        pokemon_card.PokemonCard(
                             name.text,
                             re.sub(r"\D", "", price),
                             re.search(r"\d+", stock).group(),
@@ -295,7 +264,7 @@ async def torecacamp(num):
                 })
 
                 torecaCampArray.append(
-                    PokemonCard(
+                    pokemon_card.PokemonCard(
                         name.text,
                         re.search(r"[\d,]+", price).group().replace(",", ""),
                         re.search(r"\d+", quantity).group(),
@@ -366,7 +335,7 @@ def marketPrice():
 
 
         cardMarketArray.append(
-            CardMarketStats(
+            card_market_stats.CardMarketStats(
                 marketCard.image,
                 marketCard.link,
                 marketCard.name,
@@ -382,7 +351,7 @@ def marketPrice():
 
 
 
-setnum = 0
+setnum = 9
 
 asyncio.run(cardrush(setnum))
 print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
