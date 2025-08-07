@@ -12,7 +12,11 @@ import pokemon_card
 import website_link
 import card_market_stats
 import psycopg2
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv()
 c = CurrencyConverter()
 
 HEADERS = {
@@ -380,6 +384,63 @@ async def hareruya(num):
             break
 
 
+def databaseConnection():
+    try:
+        connection = psycopg2.connect(
+            database = str(os.getenv("DATABASE")),
+            user = str(os.getenv("USER")),
+            password = str(os.getenv("PASSWORD")),
+            host = str(os.getenv("HOST")),
+            port = str(os.getenv("PORT")),
+        )
+        print("Database Connection Established")
+
+        cursor = connection.cursor()
+
+        insert_query = "INSERT INTO website_links (site_name, link, set, set_amount) VALUES (%s, %s, %s, %s)"
+
+        for cardrushlink in cardrushLinks:
+            try:
+                print("Inserting cardrush set:", cardrushlink.set)
+                data = ("cardrush", cardrushlink.link, cardrushlink.set, cardrushlink.setAmount)
+                cursor.execute(insert_query, data)
+                connection.commit()
+                print("Data inserted:", data)
+            except psycopg2 as e:
+                print("Insertion failed for cardrush", cardrushlink.set, e)
+
+        for torecacamplink in torecaCampLinks:
+            try:
+                print("Inserting torecacamp set:", torecacamplink.set)
+                data = ("torecacamp", torecacamplink.link, torecacamplink.set, torecacamplink.setAmount)
+                cursor.execute(insert_query, data)
+                connection.commit()
+                print("Data inserted:", data)
+            except psycopg2 as e:
+                print("Insertion failed for torecacamp", torecacamplink.set, e)
+
+        for hareruyaLink in hareruyaLinks:
+            try:
+                print("Inserting hareruya set:", hareruyaLink.link)
+                data = ("hareruya", hareruyaLink.link, hareruyaLink.set, hareruyaLink.setAmount)
+                cursor.execute(insert_query, data)
+                connection.commit()
+            except psycopg2 as e:
+                print("Insertion failed for hareruya", hareruyaLink.link, e)
+
+        for priceChartingLink in priceChartingLinks:
+            try:
+                print("Inserting price charting set:", priceChartingLink.link)
+                data = ("pricecharting", priceChartingLink.link, priceChartingLink.setAmount)
+                cursor.execute(insert_query, data)
+                connection.commit()
+            except:
+                print("Insertion failed for pricecharting", priceChartingLink.link, e)
+
+
+    except psycopg2.Error as e:
+        print(f"Error connecting to PostgreSQL: {e}")
+
 
 
 def marketPrice():
@@ -479,35 +540,37 @@ def marketPrice():
 
 setnum = 1
 
-asyncio.run(cardrush(setnum))
-print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
+# asyncio.run(cardrush(setnum))
+# print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
+#
+# asyncio.run(torecacamp(setnum))
+# print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
+#
+# asyncio.run(hareruya(setnum))
+# print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
+#
+# print("CR Array:", cardrushArray)
+# print("TC Array:", torecaCampArray)
+#
+# priceCharting(setnum)
+# print(priceChartingArray[setnum].name)
+#
+# marketPrice()
+# print(cardMarketArray[0].imageURL,
+#       cardMarketArray[0].siteURL,
+#       cardMarketArray[0].cardName,
+#       cardMarketArray[0].card_number,
+#
+#       cardMarketArray[0].marketPrice,
+#
+#       cardMarketArray[0].cardrushPrice,
+#       cardMarketArray[0].cardrushQuantity,
+#
+#       cardMarketArray[0].torecacampPrice,
+#       cardMarketArray[0].torecacampQuantity,
+#
+#       cardMarketArray[0].hareruyaPrice,
+#       cardMarketArray[0].hareruyaQuantity,
+# )
 
-asyncio.run(torecacamp(setnum))
-print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
-
-asyncio.run(hareruya(setnum))
-print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
-
-print("CR Array:", cardrushArray)
-print("TC Array:", torecaCampArray)
-
-priceCharting(setnum)
-print(priceChartingArray[setnum].name)
-
-marketPrice()
-print(cardMarketArray[0].imageURL,
-      cardMarketArray[0].siteURL,
-      cardMarketArray[0].cardName,
-      cardMarketArray[0].card_number,
-
-      cardMarketArray[0].marketPrice,
-
-      cardMarketArray[0].cardrushPrice,
-      cardMarketArray[0].cardrushQuantity,
-
-      cardMarketArray[0].torecacampPrice,
-      cardMarketArray[0].torecacampQuantity,
-
-      cardMarketArray[0].hareruyaPrice,
-      cardMarketArray[0].hareruyaQuantity,
-)
+databaseConnection()
