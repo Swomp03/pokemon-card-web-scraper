@@ -6,6 +6,7 @@ from googletrans import Translator
 import asyncio
 import re
 from currency_converter import CurrencyConverter
+from datetime import datetime, date
 
 import price_charting_card
 import pokemon_card
@@ -26,63 +27,63 @@ HEADERS = {
 
 cardrushArray = []
 cardrushLinks = [
-    website_link.WebsiteLink("sv2a", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=sv2a&num=100&img=120&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 165),
-    website_link.WebsiteLink("sv7a", "https://www.cardrush-pokemon.jp/product-group/409?num=100&available=1&img=120&order=desc", 64),
-    website_link.WebsiteLink("sv8", "https://www.cardrush-pokemon.jp/product-group/411?num=100&available=1&img=120&order=desc", 106),
-    website_link.WebsiteLink("sv8a", "https://www.cardrush-pokemon.jp/product-group/416?num=100&available=1&img=120&order=desc", 187),
-    website_link.WebsiteLink("sv9", "https://www.cardrush-pokemon.jp/product-group/427?num=100&available=1&img=120&order=desc", 100),
-    website_link.WebsiteLink("sv9a", "https://www.cardrush-pokemon.jp/product-group/449?num=100&available=1&img=120&order=desc", 63),
-    website_link.WebsiteLink("sv10", "https://www.cardrush-pokemon.jp/product-group/457?num=100&available=1&img=120&order=desc", 98),
-    website_link.WebsiteLink("sv11b", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11b&Submit=search", 86),
-    website_link.WebsiteLink("sv11w", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11w&Submit=search", 86),
-    website_link.WebsiteLink("m1l", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=m1l&num=100&img=160&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 63),
-    website_link.WebsiteLink("m1s", "https://www.cardrush-pokemon.jp/product-list?num=100&img=160&available=1&order=price-desc&keyword=m1s&Submit=search", 63),
+    website_link.WebsiteLink("sv2a", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=sv2a&num=100&img=120&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 165, date(2023, 6, 16)),
+    website_link.WebsiteLink("sv7a", "https://www.cardrush-pokemon.jp/product-group/409?num=100&available=1&img=120&order=desc", 64, date(2024, 9, 13)),
+    website_link.WebsiteLink("sv8", "https://www.cardrush-pokemon.jp/product-group/411?num=100&available=1&img=120&order=desc", 106, date(2024, 10, 18)),
+    website_link.WebsiteLink("sv8a", "https://www.cardrush-pokemon.jp/product-group/416?num=100&available=1&img=120&order=desc", 187, date(2024, 12, 6)),
+    website_link.WebsiteLink("sv9", "https://www.cardrush-pokemon.jp/product-group/427?num=100&available=1&img=120&order=desc", 100, date(2025, 1, 24)),
+    website_link.WebsiteLink("sv9a", "https://www.cardrush-pokemon.jp/product-group/449?num=100&available=1&img=120&order=desc", 63, date(2025, 3, 14)),
+    website_link.WebsiteLink("sv10", "https://www.cardrush-pokemon.jp/product-group/457?num=100&available=1&img=120&order=desc", 98, date(2025, 4, 18)),
+    website_link.WebsiteLink("sv11b", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11b&Submit=search", 86, date(2025, 6, 6)),
+    website_link.WebsiteLink("sv11w", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11w&Submit=search", 86, date(2025, 6, 6)),
+    website_link.WebsiteLink("m1l", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=m1l&num=100&img=160&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 63, date(2025, 8, 1)),
+    website_link.WebsiteLink("m1s", "https://www.cardrush-pokemon.jp/product-list?num=100&img=160&available=1&order=price-desc&keyword=m1s&Submit=search", 63, date(2025, 8, 1)),
 ]
 
 torecaCampArray = []
 torecaCampLinks = [
-    website_link.WebsiteLink("sv2a", "https://torecacamp-pokemon.com/collections/sv2a-%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89151?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 165),
-    website_link.WebsiteLink("sv7a", "https://torecacamp-pokemon.com/collections/sv7a-%E6%A5%BD%E5%9C%92%E3%83%89%E3%83%A9%E3%82%B4%E3%83%BC%E3%83%8A?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 64),
-    website_link.WebsiteLink("sv8", "https://torecacamp-pokemon.com/collections/sv8-%E8%B6%85%E9%9B%BB%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AB%E3%83%BC?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 106),
-    website_link.WebsiteLink("sv8a", "https://torecacamp-pokemon.com/collections/sv8a-%E3%83%86%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%AB%E3%83%95%E3%82%A7%E3%82%B9ex?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 187),
-    website_link.WebsiteLink("sv9", "https://torecacamp-pokemon.com/collections/sv9?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 100),
-    website_link.WebsiteLink("sv9a", "https://torecacamp-pokemon.com/collections/sv9a?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63),
-    website_link.WebsiteLink("sv10", "https://torecacamp-pokemon.com/collections/sv10?filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=&sort_by=price-descending", 98),
-    website_link.WebsiteLink("sv11b", "https://torecacamp-pokemon.com/collections/sv11b?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86),
-    website_link.WebsiteLink("sv11w", "https://torecacamp-pokemon.com/collections/sv11w?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86),
-    website_link.WebsiteLink("m1l", "https://torecacamp-pokemon.com/collections/m1l?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63),
-    website_link.WebsiteLink("m1s", "https://torecacamp-pokemon.com/collections/m1s?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63),
+    website_link.WebsiteLink("sv2a", "https://torecacamp-pokemon.com/collections/sv2a-%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89151?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 165, date(2023, 6, 16)),
+    website_link.WebsiteLink("sv7a", "https://torecacamp-pokemon.com/collections/sv7a-%E6%A5%BD%E5%9C%92%E3%83%89%E3%83%A9%E3%82%B4%E3%83%BC%E3%83%8A?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 64, date(2024, 9, 13)),
+    website_link.WebsiteLink("sv8", "https://torecacamp-pokemon.com/collections/sv8-%E8%B6%85%E9%9B%BB%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AB%E3%83%BC?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 106, date(2024, 10, 18)),
+    website_link.WebsiteLink("sv8a", "https://torecacamp-pokemon.com/collections/sv8a-%E3%83%86%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%AB%E3%83%95%E3%82%A7%E3%82%B9ex?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 187, date(2024, 12, 6)),
+    website_link.WebsiteLink("sv9", "https://torecacamp-pokemon.com/collections/sv9?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 100, date(2025, 1, 24)),
+    website_link.WebsiteLink("sv9a", "https://torecacamp-pokemon.com/collections/sv9a?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 3, 14)),
+    website_link.WebsiteLink("sv10", "https://torecacamp-pokemon.com/collections/sv10?filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=&sort_by=price-descending", 98, date(2025, 4, 18)),
+    website_link.WebsiteLink("sv11b", "https://torecacamp-pokemon.com/collections/sv11b?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86, date(2025, 6, 6)),
+    website_link.WebsiteLink("sv11w", "https://torecacamp-pokemon.com/collections/sv11w?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86, date(2025, 6, 6)),
+    website_link.WebsiteLink("m1l", "https://torecacamp-pokemon.com/collections/m1l?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 8, 1)),
+    website_link.WebsiteLink("m1s", "https://torecacamp-pokemon.com/collections/m1s?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 8, 1)),
 ]
 
 priceChartingArray = []
 priceChartingLinks = [
-    website_link.WebsiteLink("sv2a", "https://www.pricecharting.com/console/pokemon-japanese-scarlet-&-violet-151?exclude-hardware=true&exclude-variants=true&in-collection=&model-number=&show-images=true&sort=highest-price&view=grid", 165),
-    website_link.WebsiteLink("sv7a", "https://www.pricecharting.com/console/pokemon-japanese-paradise-dragona?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 64),
-    website_link.WebsiteLink("sv8", "https://www.pricecharting.com/console/pokemon-japanese-super-electric-breaker?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 106),
-    website_link.WebsiteLink("sv8a", "https://www.pricecharting.com/console/pokemon-japanese-terastal-festival?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 187),
-    website_link.WebsiteLink("sv9", "https://www.pricecharting.com/console/pokemon-japanese-battle-partners?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 100),
-    website_link.WebsiteLink("sv9a", "https://www.pricecharting.com/console/pokemon-japanese-heat-wave-arena?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
-    website_link.WebsiteLink("sv10", "https://www.pricecharting.com/console/pokemon-japanese-glory-of-team-rocket?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 98),
-    website_link.WebsiteLink("sv11b", "https://www.pricecharting.com/console/pokemon-japanese-black-bolt?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86),
-    website_link.WebsiteLink("sv11w", "https://www.pricecharting.com/console/pokemon-japanese-white-flare?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86),
-    website_link.WebsiteLink("m1l", "https://www.pricecharting.com/console/pokemon-japanese-mega-brave?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
-    website_link.WebsiteLink("m1s", "https://www.pricecharting.com/console/pokemon-japanese-mega-symphonia?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63),
+    website_link.WebsiteLink("sv2a", "https://www.pricecharting.com/console/pokemon-japanese-scarlet-&-violet-151?exclude-hardware=true&exclude-variants=true&in-collection=&model-number=&show-images=true&sort=highest-price&view=grid", 165, date(2023, 6, 16)),
+    website_link.WebsiteLink("sv7a", "https://www.pricecharting.com/console/pokemon-japanese-paradise-dragona?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 64, date(2024, 9, 13)),
+    website_link.WebsiteLink("sv8", "https://www.pricecharting.com/console/pokemon-japanese-super-electric-breaker?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 106, date(2024, 10, 18)),
+    website_link.WebsiteLink("sv8a", "https://www.pricecharting.com/console/pokemon-japanese-terastal-festival?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 187, date(2024, 12, 6)),
+    website_link.WebsiteLink("sv9", "https://www.pricecharting.com/console/pokemon-japanese-battle-partners?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 100, date(2025, 1, 24)),
+    website_link.WebsiteLink("sv9a", "https://www.pricecharting.com/console/pokemon-japanese-heat-wave-arena?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 3, 14)),
+    website_link.WebsiteLink("sv10", "https://www.pricecharting.com/console/pokemon-japanese-glory-of-team-rocket?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 98, date(2025, 4, 18)),
+    website_link.WebsiteLink("sv11b", "https://www.pricecharting.com/console/pokemon-japanese-black-bolt?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86, date(2025, 6, 6)),
+    website_link.WebsiteLink("sv11w", "https://www.pricecharting.com/console/pokemon-japanese-white-flare?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86, date(2025, 6, 6)),
+    website_link.WebsiteLink("m1l", "https://www.pricecharting.com/console/pokemon-japanese-mega-brave?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 8, 1)),
+    website_link.WebsiteLink("m1s", "https://www.pricecharting.com/console/pokemon-japanese-mega-symphonia?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 8, 1)),
 ]
 
 
 hareruyaArray = []
 hareruyaLinks = [
-    website_link.WebsiteLink("sv2a", "https://www.hareruya2.com/collections/612?filter.v.availability=1&sort_by=price-descending", 165),
-    website_link.WebsiteLink("sv7a", "https://www.hareruya2.com/collections/sv7a?filter.v.availability=1&sort_by=price-descending", 64),
-    website_link.WebsiteLink("sv8", "https://www.hareruya2.com/collections/sv8?filter.v.availability=1&sort_by=price-descending", 106),
-    website_link.WebsiteLink("sv8a", "https://www.hareruya2.com/collections/sv8a?filter.v.availability=1&sort_by=price-descending", 187),
-    website_link.WebsiteLink("sv9", "https://www.hareruya2.com/collections/sv9?filter.v.availability=1&sort_by=price-descending", 100),
-    website_link.WebsiteLink("sv9a", "https://www.hareruya2.com/collections/sv9a?filter.v.availability=1&sort_by=price-descending", 63),
-    website_link.WebsiteLink("sv10", "https://www.hareruya2.com/collections/sv10?filter.v.availability=1&sort_by=price-descending", 98),
-    website_link.WebsiteLink("sv11b", "https://www.hareruya2.com/collections/sv11b?filter.v.availability=1&sort_by=price-descending", 86),
-    website_link.WebsiteLink("sv11w", "https://www.hareruya2.com/collections/sv11w?filter.v.availability=1&sort_by=price-descending", 86),
-    website_link.WebsiteLink("m1l", "https://www.hareruya2.com/collections/701?filter.v.availability=1&sort_by=price-descending", 63),
-    website_link.WebsiteLink("m1s", "https://www.hareruya2.com/collections/702?filter.v.availability=1&sort_by=price-descending", 63),
+    website_link.WebsiteLink("sv2a", "https://www.hareruya2.com/collections/612?filter.v.availability=1&sort_by=price-descending", 165, date(2023, 6, 16)),
+    website_link.WebsiteLink("sv7a", "https://www.hareruya2.com/collections/sv7a?filter.v.availability=1&sort_by=price-descending", 64, date(2024, 9, 13)),
+    website_link.WebsiteLink("sv8", "https://www.hareruya2.com/collections/sv8?filter.v.availability=1&sort_by=price-descending", 106, date(2024, 10, 18)),
+    website_link.WebsiteLink("sv8a", "https://www.hareruya2.com/collections/sv8a?filter.v.availability=1&sort_by=price-descending", 187, date(2024, 12, 6)),
+    website_link.WebsiteLink("sv9", "https://www.hareruya2.com/collections/sv9?filter.v.availability=1&sort_by=price-descending", 100, date(2025, 1, 24)),
+    website_link.WebsiteLink("sv9a", "https://www.hareruya2.com/collections/sv9a?filter.v.availability=1&sort_by=price-descending", 63, date(2025, 3, 14)),
+    website_link.WebsiteLink("sv10", "https://www.hareruya2.com/collections/sv10?filter.v.availability=1&sort_by=price-descending", 98, date(2025, 4, 18)),
+    website_link.WebsiteLink("sv11b", "https://www.hareruya2.com/collections/sv11b?filter.v.availability=1&sort_by=price-descending", 86, date(2025, 6, 6)),
+    website_link.WebsiteLink("sv11w", "https://www.hareruya2.com/collections/sv11w?filter.v.availability=1&sort_by=price-descending", 86, date(2025, 6, 6)),
+    website_link.WebsiteLink("m1l", "https://www.hareruya2.com/collections/701?filter.v.availability=1&sort_by=price-descending", 63, date(2025, 8, 1)),
+    website_link.WebsiteLink("m1s", "https://www.hareruya2.com/collections/702?filter.v.availability=1&sort_by=price-descending", 63, date(2025, 8, 1)),
 ]
 
 cardMarketArray = []
@@ -383,64 +384,67 @@ async def hareruya(num):
             finalExit = True
             break
 
-
-def databaseConnection():
-    try:
-        connection = psycopg2.connect(
-            database = str(os.getenv("DATABASE")),
-            user = str(os.getenv("USER")),
-            password = str(os.getenv("PASSWORD")),
-            host = str(os.getenv("HOST")),
-            port = str(os.getenv("PORT")),
-        )
-        print("Database Connection Established")
-
-        cursor = connection.cursor()
-
-        insert_query = "INSERT INTO website_links (site_name, link, set, set_amount) VALUES (%s, %s, %s, %s)"
-
-        for cardrushlink in cardrushLinks:
-            try:
-                print("Inserting cardrush set:", cardrushlink.set)
-                data = ("cardrush", cardrushlink.link, cardrushlink.set, cardrushlink.setAmount)
-                cursor.execute(insert_query, data)
-                connection.commit()
-                print("Data inserted:", data)
-            except psycopg2 as e:
-                print("Insertion failed for cardrush", cardrushlink.set, e)
-
-        for torecacamplink in torecaCampLinks:
-            try:
-                print("Inserting torecacamp set:", torecacamplink.set)
-                data = ("torecacamp", torecacamplink.link, torecacamplink.set, torecacamplink.setAmount)
-                cursor.execute(insert_query, data)
-                connection.commit()
-                print("Data inserted:", data)
-            except psycopg2 as e:
-                print("Insertion failed for torecacamp", torecacamplink.set, e)
-
-        for hareruyaLink in hareruyaLinks:
-            try:
-                print("Inserting hareruya set:", hareruyaLink.link)
-                data = ("hareruya", hareruyaLink.link, hareruyaLink.set, hareruyaLink.setAmount)
-                cursor.execute(insert_query, data)
-                connection.commit()
-            except psycopg2 as e:
-                print("Insertion failed for hareruya", hareruyaLink.link, e)
-
-        for priceChartingLink in priceChartingLinks:
-            try:
-                print("Inserting price charting set:", priceChartingLink.link)
-                data = ("pricecharting", priceChartingLink.link, priceChartingLink.setAmount)
-                cursor.execute(insert_query, data)
-                connection.commit()
-            except:
-                print("Insertion failed for pricecharting", priceChartingLink.link, e)
-
-
-    except psycopg2.Error as e:
-        print(f"Error connecting to PostgreSQL: {e}")
-
+#
+# def databaseConnection():
+#     try:
+#         connection = psycopg2.connect(
+#             database = str(os.getenv("DATABASE")),
+#             user = str(os.getenv("USER")),
+#             password = str(os.getenv("PASSWORD")),
+#             host = str(os.getenv("HOST")),
+#             port = str(os.getenv("PORT")),
+#         )
+#         print("Database Connection Established")
+#
+#         cursor = connection.cursor()
+#
+#         cardrush_query = "INSERT INTO cardrush_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+#         torecacamp_query = "INSERT INTO toreca_camp_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+#         hareruya_query = "INSERT INTO hareruya_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+#         pricecharting_query = "INSERT INTO price_charting_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+#
+#         for cardrushlink in cardrushLinks:
+#             try:
+#                 print("Inserting cardrush set:", cardrushlink.set)
+#                 data = (cardrushlink.link, cardrushlink.set, cardrushlink.setAmount, cardrushlink.setReleaseDate)
+#                 cursor.execute(cardrush_query, data)
+#                 connection.commit()
+#                 print("Data inserted:", data)
+#             except psycopg2 as e:
+#                 print("Insertion failed for cardrush", cardrushlink.set, e)
+#
+#         for torecacamplink in torecaCampLinks:
+#             try:
+#                 print("Inserting torecacamp set:", torecacamplink.set)
+#                 data = (torecacamplink.link, torecacamplink.set, torecacamplink.setAmount, torecacamplink.setReleaseDate)
+#                 cursor.execute(torecacamp_query, data)
+#                 connection.commit()
+#                 print("Data inserted:", data)
+#             except psycopg2 as e:
+#                 print("Insertion failed for torecacamp", torecacamplink.set, e)
+#
+#         for hareruyaLink in hareruyaLinks:
+#             try:
+#                 print("Inserting hareruya set:", hareruyaLink.link)
+#                 data = (hareruyaLink.link, hareruyaLink.set, hareruyaLink.setAmount, hareruyaLink.setReleaseDate)
+#                 cursor.execute(hareruya_query, data)
+#                 connection.commit()
+#             except psycopg2 as e:
+#                 print("Insertion failed for hareruya", hareruyaLink.link, e)
+#
+#         for priceChartingLink in priceChartingLinks:
+#             try:
+#                 print("Inserting price charting set:", priceChartingLink.link)
+#                 data = (priceChartingLink.link, priceChartingLink.set, priceChartingLink.setAmount, priceChartingLink.setReleaseDate)
+#                 cursor.execute(pricecharting_query, data)
+#                 connection.commit()
+#             except psycopg2 as e:
+#                 print("Insertion failed for pricecharting", priceChartingLink.link, e)
+#
+#
+#     except psycopg2.Error as e:
+#         print(f"Error connecting to PostgreSQL: {e}")
+#
 
 
 def marketPrice():
@@ -538,7 +542,7 @@ def marketPrice():
 
 
 
-setnum = 1
+setnum = 10
 
 # asyncio.run(cardrush(setnum))
 # print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
