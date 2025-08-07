@@ -544,37 +544,37 @@ def marketPrice():
 
 setnum = 10
 
-# asyncio.run(cardrush(setnum))
-# print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
-#
-# asyncio.run(torecacamp(setnum))
-# print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
-#
-# asyncio.run(hareruya(setnum))
-# print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
-#
-# print("CR Array:", cardrushArray)
-# print("TC Array:", torecaCampArray)
-#
-# priceCharting(setnum)
-# print(priceChartingArray[setnum].name)
-#
-# marketPrice()
-# print(cardMarketArray[0].imageURL,
-#       cardMarketArray[0].siteURL,
-#       cardMarketArray[0].cardName,
-#       cardMarketArray[0].card_number,
-#
-#       cardMarketArray[0].marketPrice,
-#
-#       cardMarketArray[0].cardrushPrice,
-#       cardMarketArray[0].cardrushQuantity,
-#
-#       cardMarketArray[0].torecacampPrice,
-#       cardMarketArray[0].torecacampQuantity,
-#
-#       cardMarketArray[0].hareruyaPrice,
-#       cardMarketArray[0].hareruyaQuantity,
-# )
+asyncio.run(cardrush(setnum))
+print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
 
-databaseConnection()
+asyncio.run(torecacamp(setnum))
+print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
+
+asyncio.run(hareruya(setnum))
+print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
+
+print("CR Array:", cardrushArray)
+print("TC Array:", torecaCampArray)
+
+priceCharting(setnum)
+print(priceChartingArray[setnum].name)
+
+marketPrice()
+print(cardMarketArray[0].imageURL,
+      cardMarketArray[0].siteURL,
+      cardMarketArray[0].cardName,
+      cardMarketArray[0].card_number,
+
+      cardMarketArray[0].marketPrice,
+
+      cardMarketArray[0].cardrushPrice,
+      cardMarketArray[0].cardrushQuantity,
+
+      cardMarketArray[0].torecacampPrice,
+      cardMarketArray[0].torecacampQuantity,
+
+      cardMarketArray[0].hareruyaPrice,
+      cardMarketArray[0].hareruyaQuantity,
+)
+
+# databaseConnection()
