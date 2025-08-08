@@ -88,8 +88,36 @@ hareruyaLinks = [
 
 cardMarketArray = []
 
+connection = psycopg2.connect(
+    database = str(os.getenv("DATABASE")),
+    user = str(os.getenv("USER")),
+    password = str(os.getenv("PASSWORD")),
+    host = str(os.getenv("HOST")),
+    port = str(os.getenv("PORT")),
+)
+print("Database Connection Established")
+
+cursor = connection.cursor()
+
 
 def priceCharting(num):
+
+    query = """
+        INSERT INTO price_charting_cards (card_name, price, link, image_link, card_number, card_set, set_amount)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (card_number)
+        DO UPDATE SET 
+            card_name = EXCLUDED.card_name,
+            price = EXCLUDED.price,
+            link = EXCLUDED.link,
+            image_link = EXCLUDED.image_link,
+            card_set = EXCLUDED.card_set,
+            set_amount = EXCLUDED.set_amount
+    """
+
+    priceChartingSet = priceChartingLinks[num].set
+    priceChartingSetAmount = priceChartingLinks[num].setAmount
+
     priceChartingCurrUrl = priceChartingLinks[num].link
     priceChartingResponse = requests.get(priceChartingCurrUrl, headers=HEADERS)
     priceChartingResponse.encoding = 'utf-8'
@@ -126,6 +154,20 @@ def priceCharting(num):
 
             print(name, price, link, image, card_number)
 
+            try:
+                cursor.execute(query, (
+                    name,
+                    price,
+                    link,
+                    image,
+                    card_number,
+                    priceChartingSet,
+                    priceChartingSetAmount,
+                ))
+
+            except:
+                print("Error occured when inserting/updating data in price_charting table")
+
 
 
 
@@ -133,10 +175,25 @@ def priceCharting(num):
 
 async def cardrush(num):
 
+    print("Beginning of Cardrush")
+
     translator = Translator()
 
     # cardrushListingURL = "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=sv10&num=100&img=120&order=desc&main_category=&group=448&Submit=Narrow+your+search"
     cardrushListingURL = cardrushLinks[num].link
+    cardrushSet = cardrushLinks[num].set
+
+    query = """
+        INSERT INTO cardrush_cards (card_name, price, stock, link, card_number, card_set)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT (card_number)
+        DO UPDATE SET 
+            card_name = EXCLUDED.card_name,
+            price = EXCLUDED.price,
+            stock = EXCLUDED.stock,
+            link = EXCLUDED.link,
+            card_set = EXCLUDED.card_set
+    """
 
     for page in range(1, 6):
         print("Page:", page)
@@ -150,7 +207,6 @@ async def cardrush(num):
         cards = soup.select("li.list_item_cell")
 
         nextButton = soup.select_one("a.to_next_page")
-
 
         for card in cards:
             try:
@@ -204,6 +260,25 @@ async def cardrush(num):
                             re.search(r"\{(\d+)/\d+\}", name.text).group(1)
                         )
                     )
+
+                    params = (
+                            name.text,
+                            re.sub(r"\D", "", price),
+                            re.search(r"\d+", stock).group(),
+                            link,
+                            re.search(r"\{(\d+)/\d+\}", name.text).group(1),
+                            cardrushSet
+                        )
+
+                    try:
+                        print(cursor.mogrify(query, params).decode("utf8"))
+                        cursor.execute(query, params)
+                        connection.commit()
+
+                    except psycopg2._psycopg.OperationalError:
+                        print("An error occurred while inserting/updating the cardrush table")
+
+
             except:
                 print("Out of stock occurred")
                 # break
@@ -227,6 +302,20 @@ async def torecacamp(num):
 
     torecaCampListingURL = torecaCampLinks[num].link
     setAmount = torecaCampLinks[num].setAmount
+
+    torecaCampSet = torecaCampLinks[num].set
+
+    query = """
+        INSERT INTO toreca_camp_cards (card_name, price, stock, link, card_number, card_set)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT (card_number)
+        DO UPDATE SET 
+            card_name = EXCLUDED.card_name,
+            price = EXCLUDED.price,
+            stock = EXCLUDED.stock,
+            link = EXCLUDED.link,
+            card_set = EXCLUDED.card_set
+    """
 
     print("Start of Toreca")
     for page in range(1, 20):
@@ -259,7 +348,7 @@ async def torecacamp(num):
 
             # Quantity / Inventory
             qty_tag = item.select_one("span.product-item__inventory")
-            quantity = qty_tag.get_text(strip=True) if qty_tag else "0"
+            stock = qty_tag.get_text(strip=True) if qty_tag else "0"
 
             # Product link (relative URL)
             link_tag = item.select_one("a.product-item__image-wrapper")
@@ -280,7 +369,7 @@ async def torecacamp(num):
                 print({
                     "name": name.text,
                     "price": re.search(r"[\d,]+", price).group().replace(",", ""),
-                    "quantity": re.search(r"\d+", quantity).group(),
+                    "quantity": re.search(r"\d+", stock).group(),
                     "link": "https://torecacamp-pokemon.com" + link,
                     "card_number": re.search(r"(\d+)/\d+", name.text).group(1)
                 })
@@ -289,11 +378,24 @@ async def torecacamp(num):
                     pokemon_card.PokemonCard(
                         name.text,
                         re.search(r"[\d,]+", price).group().replace(",", ""),
-                        re.search(r"\d+", quantity).group(),
+                        re.search(r"\d+", stock).group(),
                         "https://torecacamp-pokemon.com" + link,
                         re.search(r"(\d+)/\d+", name.text).group(1)
                     )
                 )
+
+                try:
+                    cursor.execute(query, (
+                        name.text,
+                        re.sub(r"\D", "", price),
+                        re.search(r"\d+", stock).group(),
+                        "https://torecacamp-pokemon.com" + link,
+                        re.search(r"\{(\d+)/\d+\}", name.text).group(1),
+                        torecaCampSet
+                    ))
+
+                except:
+                    print("An error occurred while inserting/updating the toreca_camp table")
 
         if next_link_tag:
             print("Next Page")
@@ -310,6 +412,20 @@ async def hareruya(num):
     translator = Translator()
     hareruyaListingURL = hareruyaLinks[num].link
     setAmount = hareruyaLinks[num].setAmount
+
+    hareruyaSet = hareruyaLinks[num].set
+
+    query = """
+        INSERT INTO hareruya_cards (card_name, price, stock, link, card_number, card_set)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT (card_number)
+        DO UPDATE SET 
+            card_name = EXCLUDED.card_name,
+            price = EXCLUDED.price,
+            stock = EXCLUDED.stock,
+            link = EXCLUDED.link,
+            card_set = EXCLUDED.card_set
+    """
 
     print("Start of Hareruya")
     for page in range(1, 7):
@@ -337,8 +453,8 @@ async def hareruya(num):
                 price_tag = card.select_one("span.figure").get_text(strip=True)
                 price = int(re.sub(r"\D", "", price_tag))
 
-                quantity_raw = card.select_one("div.product__inventory").get_text(strip=True)
-                quantity = int(re.search(r"\d+", quantity_raw).group())
+                stock_raw = card.select_one("div.product__inventory").get_text(strip=True)
+                stock = int(re.search(r"\d+", stock_raw).group())
 
                 link = card.select_one("a.full-unstyled-link").get("href")
 
@@ -358,7 +474,7 @@ async def hareruya(num):
                     print(
                         name.text,
                         price,
-                        quantity,
+                        stock,
                         "https://www.hareruya2.com" + link,
                         re.search(r"(\d+)/\d+", name.text).group(1),
                     )
@@ -367,11 +483,25 @@ async def hareruya(num):
                         pokemon_card.PokemonCard(
                             name.text,
                             price,
-                            quantity,
+                            stock,
                             "https://www.hareruya2.com" + link,
                             re.search(r"(\d+)/\d+", name.text).group(1),
                         )
                     )
+
+                    try:
+                        cursor.execute(query, (
+                            name.text,
+                            price,
+                            stock,
+                            "https://www.hareruya2.com" + link,
+                            re.search(r"(\d+)/\d+", name.text).group(1),
+                            hareruyaSet,
+                        ))
+
+                    except:
+                        print("An error occurred while inserting/updating the hareruya table")
+
 
             except:
                 print("Out of stock occurred")
@@ -398,10 +528,10 @@ async def hareruya(num):
 #
 #         cursor = connection.cursor()
 #
-#         cardrush_query = "INSERT INTO cardrush_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
-#         torecacamp_query = "INSERT INTO toreca_camp_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
-#         hareruya_query = "INSERT INTO hareruya_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
-#         pricecharting_query = "INSERT INTO price_charting_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+#         cardrush_query = "INSERT INTO cardrush_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+#         torecacamp_query = "INSERT INTO toreca_camp_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+#         hareruya_query = "INSERT INTO hareruya_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+#         pricecharting_query = "INSERT INTO price_charting_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
 #
 #         for cardrushlink in cardrushLinks:
 #             try:
@@ -539,42 +669,39 @@ def marketPrice():
             )
         )
 
-
-
-
 setnum = 10
 
 asyncio.run(cardrush(setnum))
 print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
 
-asyncio.run(torecacamp(setnum))
-print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
-
-asyncio.run(hareruya(setnum))
-print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
-
-print("CR Array:", cardrushArray)
-print("TC Array:", torecaCampArray)
-
-priceCharting(setnum)
-print(priceChartingArray[setnum].name)
-
-marketPrice()
-print(cardMarketArray[0].imageURL,
-      cardMarketArray[0].siteURL,
-      cardMarketArray[0].cardName,
-      cardMarketArray[0].card_number,
-
-      cardMarketArray[0].marketPrice,
-
-      cardMarketArray[0].cardrushPrice,
-      cardMarketArray[0].cardrushQuantity,
-
-      cardMarketArray[0].torecacampPrice,
-      cardMarketArray[0].torecacampQuantity,
-
-      cardMarketArray[0].hareruyaPrice,
-      cardMarketArray[0].hareruyaQuantity,
-)
+# asyncio.run(torecacamp(setnum))
+# print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
+#
+# asyncio.run(hareruya(setnum))
+# print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
+#
+# print("CR Array:", cardrushArray)
+# print("TC Array:", torecaCampArray)
+#
+# priceCharting(setnum)
+# print(priceChartingArray[setnum].name)
+#
+# marketPrice()
+# print(cardMarketArray[0].imageURL,
+#       cardMarketArray[0].siteURL,
+#       cardMarketArray[0].cardName,
+#       cardMarketArray[0].card_number,
+#
+#       cardMarketArray[0].marketPrice,
+#
+#       cardMarketArray[0].cardrushPrice,
+#       cardMarketArray[0].cardrushQuantity,
+#
+#       cardMarketArray[0].torecacampPrice,
+#       cardMarketArray[0].torecacampQuantity,
+#
+#       cardMarketArray[0].hareruyaPrice,
+#       cardMarketArray[0].hareruyaQuantity,
+# )
 
 # databaseConnection()
