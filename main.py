@@ -154,16 +154,20 @@ def priceCharting(num):
 
             print(name, price, link, image, card_number)
 
+            params = (
+                name,
+                price,
+                link,
+                image,
+                card_number,
+                priceChartingSet,
+                priceChartingSetAmount,
+            )
+
             try:
-                cursor.execute(query, (
-                    name,
-                    price,
-                    link,
-                    image,
-                    card_number,
-                    priceChartingSet,
-                    priceChartingSetAmount,
-                ))
+                print(cursor.mogrify(query, params).decode("utf8"))
+                cursor.execute(query, params)
+                connection.commit()
 
             except:
                 print("Error occured when inserting/updating data in price_charting table")
@@ -384,15 +388,19 @@ async def torecacamp(num):
                     )
                 )
 
+                params = (
+                    name.text,
+                    re.sub(r"\D", "", price),
+                    re.search(r"\d+", stock).group(),
+                    "https://torecacamp-pokemon.com" + link,
+                    re.search(r"(\d+)/\d+", name.text).group(1),
+                    torecaCampSet
+                )
+
                 try:
-                    cursor.execute(query, (
-                        name.text,
-                        re.sub(r"\D", "", price),
-                        re.search(r"\d+", stock).group(),
-                        "https://torecacamp-pokemon.com" + link,
-                        re.search(r"\{(\d+)/\d+\}", name.text).group(1),
-                        torecaCampSet
-                    ))
+                    print(cursor.mogrify(query, params).decode("utf8"))
+                    cursor.execute(query, params)
+                    connection.commit()
 
                 except:
                     print("An error occurred while inserting/updating the toreca_camp table")
@@ -489,15 +497,20 @@ async def hareruya(num):
                         )
                     )
 
+                    params = (
+                        name.text,
+                        price,
+                        stock,
+                        "https://www.hareruya2.com" + link,
+                        re.search(r"(\d+)/\d+", name.text).group(1),
+                        hareruyaSet,
+                    )
+
                     try:
-                        cursor.execute(query, (
-                            name.text,
-                            price,
-                            stock,
-                            "https://www.hareruya2.com" + link,
-                            re.search(r"(\d+)/\d+", name.text).group(1),
-                            hareruyaSet,
-                        ))
+                        print(cursor.mogrify(query, params).decode("utf8"))
+                        cursor.execute(query, params)
+                        connection.commit()
+
 
                     except:
                         print("An error occurred while inserting/updating the hareruya table")
@@ -671,37 +684,39 @@ def marketPrice():
 
 setnum = 10
 
-asyncio.run(cardrush(setnum))
-print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
+for i in range(len(priceChartingLinks)):
 
-# asyncio.run(torecacamp(setnum))
-# print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
-#
-# asyncio.run(hareruya(setnum))
-# print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
-#
-# print("CR Array:", cardrushArray)
-# print("TC Array:", torecaCampArray)
-#
-# priceCharting(setnum)
-# print(priceChartingArray[setnum].name)
-#
-# marketPrice()
-# print(cardMarketArray[0].imageURL,
-#       cardMarketArray[0].siteURL,
-#       cardMarketArray[0].cardName,
-#       cardMarketArray[0].card_number,
-#
-#       cardMarketArray[0].marketPrice,
-#
-#       cardMarketArray[0].cardrushPrice,
-#       cardMarketArray[0].cardrushQuantity,
-#
-#       cardMarketArray[0].torecacampPrice,
-#       cardMarketArray[0].torecacampQuantity,
-#
-#       cardMarketArray[0].hareruyaPrice,
-#       cardMarketArray[0].hareruyaQuantity,
-# )
+    asyncio.run(cardrush(i))
+    print("Cardrush cards:", len(cardrushArray), cardrushArray[0].__dict__, cardrushArray[0].name)
+
+    asyncio.run(torecacamp(i))
+    print("Torecacamp cards:", len(torecaCampArray), torecaCampArray[0].__dict__, torecaCampArray[0].name)
+
+    asyncio.run(hareruya(i))
+    print("Hareruya cards:", len(hareruyaArray), hareruyaArray[0].__dict__, hareruyaArray[0].name)
+
+    print("CR Array:", cardrushArray)
+    print("TC Array:", torecaCampArray)
+
+    priceCharting(i)
+    print(priceChartingArray[i].name)
+
+    # marketPrice()
+    # print(cardMarketArray[0].imageURL,
+    #       cardMarketArray[0].siteURL,
+    #       cardMarketArray[0].cardName,
+    #       cardMarketArray[0].card_number,
+    #
+    #       cardMarketArray[0].marketPrice,
+    #
+    #       cardMarketArray[0].cardrushPrice,
+    #       cardMarketArray[0].cardrushQuantity,
+    #
+    #       cardMarketArray[0].torecacampPrice,
+    #       cardMarketArray[0].torecacampQuantity,
+    #
+    #       cardMarketArray[0].hareruyaPrice,
+    #       cardMarketArray[0].hareruyaQuantity,
+    # )
 
 # databaseConnection()
