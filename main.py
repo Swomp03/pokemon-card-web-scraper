@@ -7,6 +7,7 @@ import asyncio
 import re
 from currency_converter import CurrencyConverter
 from datetime import datetime, date
+import time
 
 import price_charting_card
 import pokemon_card
@@ -105,13 +106,12 @@ def priceCharting(num):
     query = """
         INSERT INTO price_charting_cards (card_name, price, link, image_link, card_number, card_set, set_amount)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (card_number)
+        ON CONFLICT (card_set, card_number)
         DO UPDATE SET 
             card_name = EXCLUDED.card_name,
             price = EXCLUDED.price,
             link = EXCLUDED.link,
             image_link = EXCLUDED.image_link,
-            card_set = EXCLUDED.card_set,
             set_amount = EXCLUDED.set_amount
     """
 
@@ -164,13 +164,13 @@ def priceCharting(num):
                 priceChartingSetAmount,
             )
 
-            try:
-                print(cursor.mogrify(query, params).decode("utf8"))
-                cursor.execute(query, params)
-                connection.commit()
+            # try:
+            print(cursor.mogrify(query, params).decode("utf8"))
+            cursor.execute(query, params)
+            connection.commit()
 
-            except:
-                print("Error occured when inserting/updating data in price_charting table")
+            # except:
+            #     print("Error occured when inserting/updating data in price_charting table")
 
 
 
@@ -190,13 +190,12 @@ async def cardrush(num):
     query = """
         INSERT INTO cardrush_cards (card_name, price, stock, link, card_number, card_set)
         VALUES (%s, %s, %s, %s, %s, %s)
-        ON CONFLICT (card_number)
+        ON CONFLICT (card_set, card_number)
         DO UPDATE SET 
             card_name = EXCLUDED.card_name,
             price = EXCLUDED.price,
             stock = EXCLUDED.stock,
-            link = EXCLUDED.link,
-            card_set = EXCLUDED.card_set
+            link = EXCLUDED.link
     """
 
     for page in range(1, 6):
@@ -312,13 +311,12 @@ async def torecacamp(num):
     query = """
         INSERT INTO toreca_camp_cards (card_name, price, stock, link, card_number, card_set)
         VALUES (%s, %s, %s, %s, %s, %s)
-        ON CONFLICT (card_number)
+        ON CONFLICT (card_set, card_number)
         DO UPDATE SET 
             card_name = EXCLUDED.card_name,
             price = EXCLUDED.price,
             stock = EXCLUDED.stock,
-            link = EXCLUDED.link,
-            card_set = EXCLUDED.card_set
+            link = EXCLUDED.link
     """
 
     print("Start of Toreca")
@@ -426,13 +424,12 @@ async def hareruya(num):
     query = """
         INSERT INTO hareruya_cards (card_name, price, stock, link, card_number, card_set)
         VALUES (%s, %s, %s, %s, %s, %s)
-        ON CONFLICT (card_number)
+        ON CONFLICT (card_set, card_number)
         DO UPDATE SET 
             card_name = EXCLUDED.card_name,
             price = EXCLUDED.price,
             stock = EXCLUDED.stock,
-            link = EXCLUDED.link,
-            card_set = EXCLUDED.card_set
+            link = EXCLUDED.link
     """
 
     print("Start of Hareruya")
@@ -682,7 +679,10 @@ def marketPrice():
             )
         )
 
+
 setnum = 10
+
+start_time = time.time()
 
 for i in range(len(priceChartingLinks)):
 
@@ -720,3 +720,8 @@ for i in range(len(priceChartingLinks)):
     # )
 
 # databaseConnection()
+
+end_time = time.time()
+
+elapsed_time = end_time - start_time
+print("Elapsed time:", elapsed_time)
