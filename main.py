@@ -235,12 +235,14 @@ async def cardrush(num):
 
 
                 # Stock
-                stock = card.select_one("p.stock").get_text(strip=True)
+                qty = card.select_one("p.stock").get_text(strip=True)
+                match = re.search(r"(\d+)", qty)
+                stock = match.group() if match else "0"
 
-                if stock:
-                    stock = re.search(r"\d+", stock).group()
-                else:
-                    stock = "0"
+                # if stock:
+                #     stock = re.search(r"\d+", stock).group()
+                # else:
+                #     stock = "0"
 
 
                 # Product URL
@@ -259,6 +261,7 @@ async def cardrush(num):
                         and "Expansion Pack" not in name.text
                         and "Booster Pack" not in name.text
                         and "Deck Shield" not in name.text
+                        and 'processing error' not in name.text
                         # and int(re.search(r"\{(\d+)/\d+\}", name.text).group(1) > int(cardrushSetAmount))
                 ):
                     print(
@@ -495,7 +498,9 @@ async def hareruya(num):
                 price = int(re.sub(r"\D", "", price_tag))
 
                 stock_raw = card.select_one("div.product__inventory").get_text(strip=True)
-                stock = int(re.search(r"\d+", stock_raw).group())
+                # stock = int(re.search(r"\d+", stock_raw).group())
+                match = re.search(r"\d+", stock_raw)
+                stock = match.group() if match else "0"
 
                 link = card.select_one("a.full-unstyled-link").get("href")
 
@@ -554,7 +559,7 @@ async def hareruya(num):
 
 
             except:
-                print("Out of stock occurred")
+                print("Non-Card Detected")
 
         if next_button:
             time.sleep(random.uniform(2, 5))
