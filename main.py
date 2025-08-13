@@ -6,8 +6,11 @@ from googletrans import Translator
 import asyncio
 import re
 from currency_converter import CurrencyConverter
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import time
+from zoneinfo import ZoneInfo
+import pytz
+from psycopg2 import DATETIME
 
 import price_charting_card
 import pokemon_card
@@ -28,63 +31,63 @@ HEADERS = {
 
 cardrushArray = []
 cardrushLinks = [
-    website_link.WebsiteLink("sv2a", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=sv2a&num=100&img=120&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 165, date(2023, 6, 16)),
-    website_link.WebsiteLink("sv7a", "https://www.cardrush-pokemon.jp/product-group/409?num=100&available=1&img=120&order=desc", 64, date(2024, 9, 13)),
-    website_link.WebsiteLink("sv8", "https://www.cardrush-pokemon.jp/product-group/411?num=100&available=1&img=120&order=desc", 106, date(2024, 10, 18)),
-    website_link.WebsiteLink("sv8a", "https://www.cardrush-pokemon.jp/product-group/416?num=100&available=1&img=120&order=desc", 187, date(2024, 12, 6)),
-    website_link.WebsiteLink("sv9", "https://www.cardrush-pokemon.jp/product-group/427?num=100&available=1&img=120&order=desc", 100, date(2025, 1, 24)),
-    website_link.WebsiteLink("sv9a", "https://www.cardrush-pokemon.jp/product-group/449?num=100&available=1&img=120&order=desc", 63, date(2025, 3, 14)),
-    website_link.WebsiteLink("sv10", "https://www.cardrush-pokemon.jp/product-group/457?num=100&available=1&img=120&order=desc", 98, date(2025, 4, 18)),
-    website_link.WebsiteLink("sv11b", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11b&Submit=search", 86, date(2025, 6, 6)),
-    website_link.WebsiteLink("sv11w", "https://www.cardrush-pokemon.jp/product-list?num=100&available=1&img=120&order=price-desc&keyword=sv11w&Submit=search", 86, date(2025, 6, 6)),
-    website_link.WebsiteLink("m1l", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=m1l&num=100&img=160&available=1&order=desc&main_category=&group=&Submit=Narrow+your+search", 63, date(2025, 8, 1)),
-    website_link.WebsiteLink("m1s", "https://www.cardrush-pokemon.jp/product-list?num=100&img=160&available=1&order=price-desc&keyword=m1s&Submit=search", 63, date(2025, 8, 1)),
+    # website_link.WebsiteLink("sv2a", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=sv2a&num=100&img=120&order=desc&main_category=&group=&Submit=Narrow+your+search", 165, date(2023, 6, 16)),
+    # website_link.WebsiteLink("sv7a", "https://www.cardrush-pokemon.jp/product-group/409?num=100&img=120&order=desc", 64, date(2024, 9, 13)),
+    # website_link.WebsiteLink("sv8", "https://www.cardrush-pokemon.jp/product-group/411?num=100&img=120&order=desc", 106, date(2024, 10, 18)),
+    # website_link.WebsiteLink("sv8a", "https://www.cardrush-pokemon.jp/product-group/416?num=100&img=120&order=desc", 187, date(2024, 12, 6)),
+    # website_link.WebsiteLink("sv9", "https://www.cardrush-pokemon.jp/product-group/427?num=100&img=120&order=desc", 100, date(2025, 1, 24)),
+    # website_link.WebsiteLink("sv9a", "https://www.cardrush-pokemon.jp/product-group/449?num=100&img=120&order=desc", 63, date(2025, 3, 14)),
+    # website_link.WebsiteLink("sv10", "https://www.cardrush-pokemon.jp/product-group/457?num=100&img=120&order=desc", 98, date(2025, 4, 18)),
+    # website_link.WebsiteLink("sv11b", "https://www.cardrush-pokemon.jp/product-list?num=100&img=120&order=price-desc&keyword=sv11b&Submit=search", 86, date(2025, 6, 6)),
+    # website_link.WebsiteLink("sv11w", "https://www.cardrush-pokemon.jp/product-list?num=100&img=120&order=price-desc&keyword=sv11w&Submit=search", 86, date(2025, 6, 6)),
+    # website_link.WebsiteLink("m1l", "https://www.cardrush-pokemon.jp/product-list/0/0/photo?keyword=m1l&num=100&img=160&order=desc&main_category=&group=&Submit=Narrow+your+search", 63, date(2025, 8, 1)),
+    # website_link.WebsiteLink("m1s", "https://www.cardrush-pokemon.jp/product-list?num=100&img=160&order=price-desc&keyword=m1s&Submit=search", 63, date(2025, 8, 1)),
 ]
 
 torecaCampArray = []
 torecaCampLinks = [
-    website_link.WebsiteLink("sv2a", "https://torecacamp-pokemon.com/collections/sv2a-%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89151?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 165, date(2023, 6, 16)),
-    website_link.WebsiteLink("sv7a", "https://torecacamp-pokemon.com/collections/sv7a-%E6%A5%BD%E5%9C%92%E3%83%89%E3%83%A9%E3%82%B4%E3%83%BC%E3%83%8A?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 64, date(2024, 9, 13)),
-    website_link.WebsiteLink("sv8", "https://torecacamp-pokemon.com/collections/sv8-%E8%B6%85%E9%9B%BB%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AB%E3%83%BC?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 106, date(2024, 10, 18)),
-    website_link.WebsiteLink("sv8a", "https://torecacamp-pokemon.com/collections/sv8a-%E3%83%86%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%AB%E3%83%95%E3%82%A7%E3%82%B9ex?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 187, date(2024, 12, 6)),
-    website_link.WebsiteLink("sv9", "https://torecacamp-pokemon.com/collections/sv9?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 100, date(2025, 1, 24)),
-    website_link.WebsiteLink("sv9a", "https://torecacamp-pokemon.com/collections/sv9a?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 3, 14)),
-    website_link.WebsiteLink("sv10", "https://torecacamp-pokemon.com/collections/sv10?filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=&sort_by=price-descending", 98, date(2025, 4, 18)),
-    website_link.WebsiteLink("sv11b", "https://torecacamp-pokemon.com/collections/sv11b?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86, date(2025, 6, 6)),
-    website_link.WebsiteLink("sv11w", "https://torecacamp-pokemon.com/collections/sv11w?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 86, date(2025, 6, 6)),
-    website_link.WebsiteLink("m1l", "https://torecacamp-pokemon.com/collections/m1l?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 8, 1)),
-    website_link.WebsiteLink("m1s", "https://torecacamp-pokemon.com/collections/m1s?sort_by=price-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 8, 1)),
+    # website_link.WebsiteLink("sv2a", "https://torecacamp-pokemon.com/collections/sv2a-%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89151?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 165, date(2023, 6, 16)),
+    # website_link.WebsiteLink("sv7a", "https://torecacamp-pokemon.com/collections/sv7a-%E6%A5%BD%E5%9C%92%E3%83%89%E3%83%A9%E3%82%B4%E3%83%BC%E3%83%8A?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 64, date(2024, 9, 13)),
+    # website_link.WebsiteLink("sv8", "https://torecacamp-pokemon.com/collections/sv8-%E8%B6%85%E9%9B%BB%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AB%E3%83%BC?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 106, date(2024, 10, 18)),
+    # website_link.WebsiteLink("sv8a", "https://torecacamp-pokemon.com/collections/sv8a-%E3%83%86%E3%83%A9%E3%82%B9%E3%82%BF%E3%83%AB%E3%83%95%E3%82%A7%E3%82%B9ex?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 187, date(2024, 12, 6)),
+    # website_link.WebsiteLink("sv9", "https://torecacamp-pokemon.com/collections/sv9?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 100, date(2025, 1, 24)),
+    # website_link.WebsiteLink("sv9a", "https://torecacamp-pokemon.com/collections/sv9a?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 3, 14)),
+    # website_link.WebsiteLink("sv10", "https://torecacamp-pokemon.com/collections/sv10?filter.v.price.gte=&filter.v.price.lte=&sort_by=price-descending", 98, date(2025, 4, 18)),
+    # website_link.WebsiteLink("sv11b", "https://torecacamp-pokemon.com/collections/sv11b?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 86, date(2025, 6, 6)),
+    # website_link.WebsiteLink("sv11w", "https://torecacamp-pokemon.com/collections/sv11w?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 86, date(2025, 6, 6)),
+    # website_link.WebsiteLink("m1l", "https://torecacamp-pokemon.com/collections/m1l?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 8, 1)),
+    # website_link.WebsiteLink("m1s", "https://torecacamp-pokemon.com/collections/m1s?sort_by=price-descending&filter.v.price.gte=&filter.v.price.lte=", 63, date(2025, 8, 1)),
 ]
 
 priceChartingArray = []
 priceChartingLinks = [
-    website_link.WebsiteLink("sv2a", "https://www.pricecharting.com/console/pokemon-japanese-scarlet-&-violet-151?exclude-hardware=true&exclude-variants=true&in-collection=&model-number=&show-images=true&sort=highest-price&view=grid", 165, date(2023, 6, 16)),
-    website_link.WebsiteLink("sv7a", "https://www.pricecharting.com/console/pokemon-japanese-paradise-dragona?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 64, date(2024, 9, 13)),
-    website_link.WebsiteLink("sv8", "https://www.pricecharting.com/console/pokemon-japanese-super-electric-breaker?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 106, date(2024, 10, 18)),
-    website_link.WebsiteLink("sv8a", "https://www.pricecharting.com/console/pokemon-japanese-terastal-festival?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 187, date(2024, 12, 6)),
-    website_link.WebsiteLink("sv9", "https://www.pricecharting.com/console/pokemon-japanese-battle-partners?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 100, date(2025, 1, 24)),
-    website_link.WebsiteLink("sv9a", "https://www.pricecharting.com/console/pokemon-japanese-heat-wave-arena?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 3, 14)),
-    website_link.WebsiteLink("sv10", "https://www.pricecharting.com/console/pokemon-japanese-glory-of-team-rocket?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 98, date(2025, 4, 18)),
-    website_link.WebsiteLink("sv11b", "https://www.pricecharting.com/console/pokemon-japanese-black-bolt?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86, date(2025, 6, 6)),
-    website_link.WebsiteLink("sv11w", "https://www.pricecharting.com/console/pokemon-japanese-white-flare?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86, date(2025, 6, 6)),
-    website_link.WebsiteLink("m1l", "https://www.pricecharting.com/console/pokemon-japanese-mega-brave?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 8, 1)),
-    website_link.WebsiteLink("m1s", "https://www.pricecharting.com/console/pokemon-japanese-mega-symphonia?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 8, 1)),
+    # website_link.WebsiteLink("sv2a", "https://www.pricecharting.com/console/pokemon-japanese-scarlet-&-violet-151?exclude-hardware=true&exclude-variants=true&in-collection=&model-number=&show-images=true&sort=highest-price&view=grid", 165, date(2023, 6, 16)),
+    # website_link.WebsiteLink("sv7a", "https://www.pricecharting.com/console/pokemon-japanese-paradise-dragona?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 64, date(2024, 9, 13)),
+    # website_link.WebsiteLink("sv8", "https://www.pricecharting.com/console/pokemon-japanese-super-electric-breaker?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 106, date(2024, 10, 18)),
+    # website_link.WebsiteLink("sv8a", "https://www.pricecharting.com/console/pokemon-japanese-terastal-festival?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 187, date(2024, 12, 6)),
+    # website_link.WebsiteLink("sv9", "https://www.pricecharting.com/console/pokemon-japanese-battle-partners?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 100, date(2025, 1, 24)),
+    # website_link.WebsiteLink("sv9a", "https://www.pricecharting.com/console/pokemon-japanese-heat-wave-arena?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 3, 14)),
+    # website_link.WebsiteLink("sv10", "https://www.pricecharting.com/console/pokemon-japanese-glory-of-team-rocket?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 98, date(2025, 4, 18)),
+    # website_link.WebsiteLink("sv11b", "https://www.pricecharting.com/console/pokemon-japanese-black-bolt?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86, date(2025, 6, 6)),
+    # website_link.WebsiteLink("sv11w", "https://www.pricecharting.com/console/pokemon-japanese-white-flare?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 86, date(2025, 6, 6)),
+    # website_link.WebsiteLink("m1l", "https://www.pricecharting.com/console/pokemon-japanese-mega-brave?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 8, 1)),
+    # website_link.WebsiteLink("m1s", "https://www.pricecharting.com/console/pokemon-japanese-mega-symphonia?sort=highest-price&model-number=&exclude-hardware=true&exclude-variants=true&show-images=true&in-collection=&view=grid", 63, date(2025, 8, 1)),
 ]
 
 
 hareruyaArray = []
 hareruyaLinks = [
-    website_link.WebsiteLink("sv2a", "https://www.hareruya2.com/collections/612?filter.v.availability=1&sort_by=price-descending", 165, date(2023, 6, 16)),
-    website_link.WebsiteLink("sv7a", "https://www.hareruya2.com/collections/sv7a?filter.v.availability=1&sort_by=price-descending", 64, date(2024, 9, 13)),
-    website_link.WebsiteLink("sv8", "https://www.hareruya2.com/collections/sv8?filter.v.availability=1&sort_by=price-descending", 106, date(2024, 10, 18)),
-    website_link.WebsiteLink("sv8a", "https://www.hareruya2.com/collections/sv8a?filter.v.availability=1&sort_by=price-descending", 187, date(2024, 12, 6)),
-    website_link.WebsiteLink("sv9", "https://www.hareruya2.com/collections/sv9?filter.v.availability=1&sort_by=price-descending", 100, date(2025, 1, 24)),
-    website_link.WebsiteLink("sv9a", "https://www.hareruya2.com/collections/sv9a?filter.v.availability=1&sort_by=price-descending", 63, date(2025, 3, 14)),
-    website_link.WebsiteLink("sv10", "https://www.hareruya2.com/collections/sv10?filter.v.availability=1&sort_by=price-descending", 98, date(2025, 4, 18)),
-    website_link.WebsiteLink("sv11b", "https://www.hareruya2.com/collections/sv11b?filter.v.availability=1&sort_by=price-descending", 86, date(2025, 6, 6)),
-    website_link.WebsiteLink("sv11w", "https://www.hareruya2.com/collections/sv11w?filter.v.availability=1&sort_by=price-descending", 86, date(2025, 6, 6)),
-    website_link.WebsiteLink("m1l", "https://www.hareruya2.com/collections/701?filter.v.availability=1&sort_by=price-descending", 63, date(2025, 8, 1)),
-    website_link.WebsiteLink("m1s", "https://www.hareruya2.com/collections/702?filter.v.availability=1&sort_by=price-descending", 63, date(2025, 8, 1)),
+    # website_link.WebsiteLink("sv2a", "https://www.hareruya2.com/collections/612?sort_by=price-descending", 165, date(2023, 6, 16)),
+    # website_link.WebsiteLink("sv7a", "https://www.hareruya2.com/collections/sv7a?sort_by=price-descending", 64, date(2024, 9, 13)),
+    # website_link.WebsiteLink("sv8", "https://www.hareruya2.com/collections/sv8?sort_by=price-descending", 106, date(2024, 10, 18)),
+    # website_link.WebsiteLink("sv8a", "https://www.hareruya2.com/collections/sv8a?sort_by=price-descending", 187, date(2024, 12, 6)),
+    # website_link.WebsiteLink("sv9", "https://www.hareruya2.com/collections/sv9?sort_by=price-descending", 100, date(2025, 1, 24)),
+    # website_link.WebsiteLink("sv9a", "https://www.hareruya2.com/collections/sv9a?sort_by=price-descending", 63, date(2025, 3, 14)),
+    # website_link.WebsiteLink("sv10", "https://www.hareruya2.com/collections/sv10?sort_by=price-descending", 98, date(2025, 4, 18)),
+    # website_link.WebsiteLink("sv11b", "https://www.hareruya2.com/collections/sv11b?sort_by=price-descending", 86, date(2025, 6, 6)),
+    # website_link.WebsiteLink("sv11w", "https://www.hareruya2.com/collections/sv11w?sort_by=price-descending", 86, date(2025, 6, 6)),
+    # website_link.WebsiteLink("m1l", "https://www.hareruya2.com/collections/701?sort_by=price-descending", 63, date(2025, 8, 1)),
+    # website_link.WebsiteLink("m1s", "https://www.hareruya2.com/collections/702?sort_by=price-descending", 63, date(2025, 8, 1)),
 ]
 
 cardMarketArray = []
@@ -104,15 +107,16 @@ cursor = connection.cursor()
 def priceCharting(num):
 
     query = """
-        INSERT INTO price_charting_cards (card_name, price, link, image_link, card_number, card_set, set_amount)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO price_charting_cards (card_name, price, link, image_link, card_number, card_set, set_amount, last_updated)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (card_set, card_number)
         DO UPDATE SET 
             card_name = EXCLUDED.card_name,
             price = EXCLUDED.price,
             link = EXCLUDED.link,
             image_link = EXCLUDED.image_link,
-            set_amount = EXCLUDED.set_amount
+            set_amount = EXCLUDED.set_amount,
+            last_updated = EXCLUDED.last_updated
     """
 
     priceChartingSet = priceChartingLinks[num].set
@@ -154,6 +158,9 @@ def priceCharting(num):
 
             print(name, price, link, image, card_number)
 
+            now_utc = pytz.timezone('US/Eastern')
+            print(datetime.now(now_utc))
+
             params = (
                 name,
                 price,
@@ -162,6 +169,7 @@ def priceCharting(num):
                 card_number,
                 priceChartingSet,
                 priceChartingSetAmount,
+                datetime.now(now_utc)
             )
 
             # try:
@@ -187,18 +195,21 @@ async def cardrush(num):
     cardrushListingURL = cardrushLinks[num].link
     cardrushSet = cardrushLinks[num].set
 
+    cardrushSetAmount = cardrushLinks[num].setAmount
+
     query = """
-        INSERT INTO cardrush_cards (card_name, price, stock, link, card_number, card_set)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO cardrush_cards (card_name, price, stock, link, card_number, card_set, last_updated)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (card_set, card_number)
         DO UPDATE SET 
             card_name = EXCLUDED.card_name,
             price = EXCLUDED.price,
             stock = EXCLUDED.stock,
-            link = EXCLUDED.link
+            link = EXCLUDED.link,
+            last_updated = EXCLUDED.last_updated
     """
 
-    for page in range(1, 6):
+    for page in range(1, 20):
         print("Page:", page)
 
         cardrushListingCurrURL = cardrushListingURL + "&page=" + str(page)
@@ -222,10 +233,17 @@ async def cardrush(num):
                 # Price
                 price = card.select_one("span.figure").get_text(strip=True)
 
+
                 # Stock
                 stock = card.select_one("p.stock").get_text(strip=True)
 
-                # # Product URL
+                if stock:
+                    stock = re.search(r"\d+", stock).group()
+                else:
+                    stock = "0"
+
+
+                # Product URL
                 link = card.select_one("a.item_data_link")["href"]
 
                 if ("[Status" not in name.text
@@ -241,6 +259,7 @@ async def cardrush(num):
                         and "Expansion Pack" not in name.text
                         and "Booster Pack" not in name.text
                         and "Deck Shield" not in name.text
+                        # and int(re.search(r"\{(\d+)/\d+\}", name.text).group(1) > int(cardrushSetAmount))
                 ):
                     print(
                           # translator.translate(name, src='ja', dest='en'),
@@ -249,16 +268,20 @@ async def cardrush(num):
                           # translator.translate(link, src='ja', dest='en')
                         name.text,
                         re.sub(r"\D", "", price),
-                        re.search(r"\d+", stock).group(),
+                        stock,
                         link,
-                        re.search(r"\{(\d+)/\d+\}", name.text).group(1)
+                        re.search(r"\{(\d+)/\d+\}", name.text).group(1),
+
                     )
+
+                    now_utc = pytz.timezone('US/Eastern')
+                    print(datetime.now(now_utc))
 
                     cardrushArray.append(
                         pokemon_card.PokemonCard(
                             name.text,
                             re.sub(r"\D", "", price),
-                            re.search(r"\d+", stock).group(),
+                            stock,
                             link,
                             re.search(r"\{(\d+)/\d+\}", name.text).group(1)
                         )
@@ -267,10 +290,11 @@ async def cardrush(num):
                     params = (
                             name.text,
                             re.sub(r"\D", "", price),
-                            re.search(r"\d+", stock).group(),
+                            stock,
                             link,
                             re.search(r"\{(\d+)/\d+\}", name.text).group(1),
-                            cardrushSet
+                            cardrushSet,
+                            datetime.now(now_utc)
                         )
 
                     try:
@@ -283,8 +307,10 @@ async def cardrush(num):
 
 
             except:
-                print("Out of stock occurred")
+                print("Non-Card detected")
                 # break
+
+
         if not nextButton:
             break
 
@@ -309,14 +335,15 @@ async def torecacamp(num):
     torecaCampSet = torecaCampLinks[num].set
 
     query = """
-        INSERT INTO toreca_camp_cards (card_name, price, stock, link, card_number, card_set)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO toreca_camp_cards (card_name, price, stock, link, card_number, card_set, last_updated)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (card_set, card_number)
         DO UPDATE SET 
             card_name = EXCLUDED.card_name,
             price = EXCLUDED.price,
             stock = EXCLUDED.stock,
-            link = EXCLUDED.link
+            link = EXCLUDED.link,
+            last_updated = EXCLUDED.last_updated
     """
 
     print("Start of Toreca")
@@ -350,7 +377,9 @@ async def torecacamp(num):
 
             # Quantity / Inventory
             qty_tag = item.select_one("span.product-item__inventory")
-            stock = qty_tag.get_text(strip=True) if qty_tag else "0"
+            quantity = qty_tag.get_text(strip=True) if qty_tag else "0"
+            match = re.search(r"\d+", quantity)
+            stock = match.group() if match else "0"
 
             # Product link (relative URL)
             link_tag = item.select_one("a.product-item__image-wrapper")
@@ -368,19 +397,23 @@ async def torecacamp(num):
                     and "PSA9" not in name.text
                     and int(setAmount) < int(re.search(r"(\d+)/\d+", name.text).group(1))
             ):
+
                 print({
                     "name": name.text,
                     "price": re.search(r"[\d,]+", price).group().replace(",", ""),
-                    "quantity": re.search(r"\d+", stock).group(),
+                    "quantity": stock,
                     "link": "https://torecacamp-pokemon.com" + link,
                     "card_number": re.search(r"(\d+)/\d+", name.text).group(1)
                 })
+
+                now_utc = pytz.timezone('US/Eastern')
+                print(datetime.now(now_utc))
 
                 torecaCampArray.append(
                     pokemon_card.PokemonCard(
                         name.text,
                         re.search(r"[\d,]+", price).group().replace(",", ""),
-                        re.search(r"\d+", stock).group(),
+                        stock,
                         "https://torecacamp-pokemon.com" + link,
                         re.search(r"(\d+)/\d+", name.text).group(1)
                     )
@@ -389,11 +422,13 @@ async def torecacamp(num):
                 params = (
                     name.text,
                     re.sub(r"\D", "", price),
-                    re.search(r"\d+", stock).group(),
+                    stock,
                     "https://torecacamp-pokemon.com" + link,
                     re.search(r"(\d+)/\d+", name.text).group(1),
-                    torecaCampSet
+                    torecaCampSet,
+                    datetime.now(now_utc),
                 )
+
 
                 try:
                     print(cursor.mogrify(query, params).decode("utf8"))
@@ -422,14 +457,15 @@ async def hareruya(num):
     hareruyaSet = hareruyaLinks[num].set
 
     query = """
-        INSERT INTO hareruya_cards (card_name, price, stock, link, card_number, card_set)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO hareruya_cards (card_name, price, stock, link, card_number, card_set, last_updated)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (card_set, card_number)
         DO UPDATE SET 
             card_name = EXCLUDED.card_name,
             price = EXCLUDED.price,
             stock = EXCLUDED.stock,
-            link = EXCLUDED.link
+            link = EXCLUDED.link,
+            last_updated = EXCLUDED.last_updated
     """
 
     print("Start of Hareruya")
@@ -481,8 +517,11 @@ async def hareruya(num):
                         price,
                         stock,
                         "https://www.hareruya2.com" + link,
-                        re.search(r"(\d+)/\d+", name.text).group(1),
+                        re.search(r"(\d+)/\d+", name.text).group(1)
                     )
+
+                    now_utc = pytz.timezone('US/Eastern')
+                    print(datetime.now(now_utc))
 
                     hareruyaArray.append(
                         pokemon_card.PokemonCard(
@@ -501,6 +540,7 @@ async def hareruya(num):
                         "https://www.hareruya2.com" + link,
                         re.search(r"(\d+)/\d+", name.text).group(1),
                         hareruyaSet,
+                        datetime.now(now_utc),
                     )
 
                     try:
@@ -524,66 +564,66 @@ async def hareruya(num):
             finalExit = True
             break
 
-#
-# def databaseConnection():
-#     try:
-#         connection = psycopg2.connect(
-#             database = str(os.getenv("DATABASE")),
-#             user = str(os.getenv("USER")),
-#             password = str(os.getenv("PASSWORD")),
-#             host = str(os.getenv("HOST")),
-#             port = str(os.getenv("PORT")),
-#         )
-#         print("Database Connection Established")
-#
-#         cursor = connection.cursor()
-#
-#         cardrush_query = "INSERT INTO cardrush_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
-#         torecacamp_query = "INSERT INTO toreca_camp_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
-#         hareruya_query = "INSERT INTO hareruya_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
-#         pricecharting_query = "INSERT INTO price_charting_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
-#
-#         for cardrushlink in cardrushLinks:
-#             try:
-#                 print("Inserting cardrush set:", cardrushlink.set)
-#                 data = (cardrushlink.link, cardrushlink.set, cardrushlink.setAmount, cardrushlink.setReleaseDate)
-#                 cursor.execute(cardrush_query, data)
-#                 connection.commit()
-#                 print("Data inserted:", data)
-#             except psycopg2 as e:
-#                 print("Insertion failed for cardrush", cardrushlink.set, e)
-#
-#         for torecacamplink in torecaCampLinks:
-#             try:
-#                 print("Inserting torecacamp set:", torecacamplink.set)
-#                 data = (torecacamplink.link, torecacamplink.set, torecacamplink.setAmount, torecacamplink.setReleaseDate)
-#                 cursor.execute(torecacamp_query, data)
-#                 connection.commit()
-#                 print("Data inserted:", data)
-#             except psycopg2 as e:
-#                 print("Insertion failed for torecacamp", torecacamplink.set, e)
-#
-#         for hareruyaLink in hareruyaLinks:
-#             try:
-#                 print("Inserting hareruya set:", hareruyaLink.link)
-#                 data = (hareruyaLink.link, hareruyaLink.set, hareruyaLink.setAmount, hareruyaLink.setReleaseDate)
-#                 cursor.execute(hareruya_query, data)
-#                 connection.commit()
-#             except psycopg2 as e:
-#                 print("Insertion failed for hareruya", hareruyaLink.link, e)
-#
-#         for priceChartingLink in priceChartingLinks:
-#             try:
-#                 print("Inserting price charting set:", priceChartingLink.link)
-#                 data = (priceChartingLink.link, priceChartingLink.set, priceChartingLink.setAmount, priceChartingLink.setReleaseDate)
-#                 cursor.execute(pricecharting_query, data)
-#                 connection.commit()
-#             except psycopg2 as e:
-#                 print("Insertion failed for pricecharting", priceChartingLink.link, e)
-#
-#
-#     except psycopg2.Error as e:
-#         print(f"Error connecting to PostgreSQL: {e}")
+
+def databaseConnection():
+    try:
+        connection = psycopg2.connect(
+            database = str(os.getenv("DATABASE")),
+            user = str(os.getenv("USER")),
+            password = str(os.getenv("PASSWORD")),
+            host = str(os.getenv("HOST")),
+            port = str(os.getenv("PORT")),
+        )
+        print("Database Connection Established")
+
+        cursor = connection.cursor()
+
+        cardrush_query = "INSERT INTO cardrush_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+        torecacamp_query = "INSERT INTO toreca_camp_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+        hareruya_query = "INSERT INTO hareruya_sites (link, set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+        pricecharting_query = "INSERT INTO price_charting_sites (link, card_set, set_amount, set_release_date) VALUES (%s, %s, %s, %s)"
+
+        for cardrushlink in cardrushLinks:
+            try:
+                print("Inserting cardrush set:", cardrushlink.set)
+                data = (cardrushlink.link, cardrushlink.set, cardrushlink.setAmount, cardrushlink.setReleaseDate)
+                cursor.execute(cardrush_query, data)
+                connection.commit()
+                print("Data inserted:", data)
+            except psycopg2 as e:
+                print("Insertion failed for cardrush", cardrushlink.set, e)
+
+        for torecacamplink in torecaCampLinks:
+            try:
+                print("Inserting torecacamp set:", torecacamplink.set)
+                data = (torecacamplink.link, torecacamplink.set, torecacamplink.setAmount, torecacamplink.setReleaseDate)
+                cursor.execute(torecacamp_query, data)
+                connection.commit()
+                print("Data inserted:", data)
+            except psycopg2 as e:
+                print("Insertion failed for torecacamp", torecacamplink.set, e)
+
+        for hareruyaLink in hareruyaLinks:
+            try:
+                print("Inserting hareruya set:", hareruyaLink.link)
+                data = (hareruyaLink.link, hareruyaLink.set, hareruyaLink.setAmount, hareruyaLink.setReleaseDate)
+                cursor.execute(hareruya_query, data)
+                connection.commit()
+            except psycopg2 as e:
+                print("Insertion failed for hareruya", hareruyaLink.link, e)
+
+        for priceChartingLink in priceChartingLinks:
+            try:
+                print("Inserting price charting set:", priceChartingLink.link)
+                data = (priceChartingLink.link, priceChartingLink.set, priceChartingLink.setAmount, priceChartingLink.setReleaseDate)
+                cursor.execute(pricecharting_query, data)
+                connection.commit()
+            except psycopg2 as e:
+                print("Insertion failed for pricecharting", priceChartingLink.link, e)
+
+
+    except psycopg2.Error as e:
+        print(f"Error connecting to PostgreSQL: {e}")
 #
 
 
@@ -679,10 +719,47 @@ def marketPrice():
             )
         )
 
+def websiteLinks():
+    print("Start of Website Links")
+    try:
+        cursor.execute("SELECT set, link, set_amount, set_release_date FROM cardrush_sites")
+        cardrushRows = cursor.fetchall()
+        for cardrushCard in cardrushRows:
+            cardrushLinks.append(website_link.WebsiteLink(cardrushCard[0], cardrushCard[1], cardrushCard[2], cardrushCard[3]))
 
-setnum = 10
+
+
+        cursor.execute("SELECT set, link, set_amount, set_release_date FROM toreca_camp_sites")
+        torecaRows = cursor.fetchall()
+        for torecaCampCard in torecaRows:
+            torecaCampLinks.append(website_link.WebsiteLink(torecaCampCard[0], torecaCampCard[1], torecaCampCard[2], torecaCampCard[3]))
+
+
+
+        cursor.execute("SELECT set, link, set_amount, set_release_date FROM hareruya_sites")
+        hareruyaRows = cursor.fetchall()
+        for hareruyaCampCard in hareruyaRows:
+            hareruyaLinks.append(website_link.WebsiteLink(hareruyaCampCard[0], hareruyaCampCard[1], hareruyaCampCard[2], hareruyaCampCard[3]))
+
+
+
+        cursor.execute("SELECT card_set, link, set_amount, set_release_date FROM price_charting_sites")
+        priceChartingRows = cursor.fetchall()
+        for priceChartingCard in priceChartingRows:
+            priceChartingLinks.append(website_link.WebsiteLink(priceChartingCard[0], priceChartingCard[1], priceChartingCard[2], priceChartingCard[3]))
+
+
+
+    except:
+        print("Error when getting Website Links")
+
+
+# setnum = 10
 
 start_time = time.time()
+
+websiteLinks()
+print(cardrushLinks[0].set, cardrushLinks[0].link, cardrushLinks[0].setAmount, cardrushLinks[0].setReleaseDate)
 
 for i in range(len(priceChartingLinks)):
 
@@ -701,23 +778,23 @@ for i in range(len(priceChartingLinks)):
     priceCharting(i)
     print(priceChartingArray[i].name)
 
-    # marketPrice()
-    # print(cardMarketArray[0].imageURL,
-    #       cardMarketArray[0].siteURL,
-    #       cardMarketArray[0].cardName,
-    #       cardMarketArray[0].card_number,
-    #
-    #       cardMarketArray[0].marketPrice,
-    #
-    #       cardMarketArray[0].cardrushPrice,
-    #       cardMarketArray[0].cardrushQuantity,
-    #
-    #       cardMarketArray[0].torecacampPrice,
-    #       cardMarketArray[0].torecacampQuantity,
-    #
-    #       cardMarketArray[0].hareruyaPrice,
-    #       cardMarketArray[0].hareruyaQuantity,
-    # )
+    marketPrice()
+    print(cardMarketArray[0].imageURL,
+          cardMarketArray[0].siteURL,
+          cardMarketArray[0].cardName,
+          cardMarketArray[0].card_number,
+
+          cardMarketArray[0].marketPrice,
+
+          cardMarketArray[0].cardrushPrice,
+          cardMarketArray[0].cardrushQuantity,
+
+          cardMarketArray[0].torecacampPrice,
+          cardMarketArray[0].torecacampQuantity,
+
+          cardMarketArray[0].hareruyaPrice,
+          cardMarketArray[0].hareruyaQuantity,
+    )
 
 # databaseConnection()
 
