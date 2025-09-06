@@ -251,6 +251,7 @@ async def cardrush(num):
                 if ("[Status" not in name.text
                         and "[State" not in name.text
                         and "[Condition" not in name.text
+                        and "[Situation" not in name.text
                         and "[C]" not in name.text
                         and "[U]" not in name.text
                         and "[R]" not in name.text
