@@ -89,7 +89,7 @@ hareruyaLinks = [
     # website_link.WebsiteLink("m1l", "https://www.hareruya2.com/collections/701?sort_by=price-descending", 63, date(2025, 8, 1)),
     # website_link.WebsiteLink("m1s", "https://www.hareruya2.com/collections/702?sort_by=price-descending", 63, date(2025, 8, 1)),
 ]
-
+#
 cardMarketArray = []
 
 connection = psycopg2.connect(
