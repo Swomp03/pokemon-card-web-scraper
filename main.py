@@ -99,6 +99,8 @@ connection = psycopg2.connect(
     host = str(os.getenv("HOST")),
     port = str(os.getenv("PORT")),
 )
+
+connection.autocommit = True
 print("Database Connection Established")
 
 cursor = connection.cursor()
@@ -172,13 +174,14 @@ def priceCharting(num):
                 datetime.now(now_utc)
             )
 
-            # try:
-            print(cursor.mogrify(query, params).decode("utf8"))
-            cursor.execute(query, params)
-            connection.commit()
+            try:
+                print(cursor.mogrify(query, params).decode("utf8"))
+                cursor.execute(query, params)
+                connection.commit()
 
-            # except:
-            #     print("Error occured when inserting/updating data in price_charting table")
+            except:
+                connection.rollback()
+                print("Error occured when inserting/updating data in price_charting table")
 
 
 
@@ -250,8 +253,15 @@ async def cardrush(num):
 
                 if ("[Status" not in name.text
                         and "[State" not in name.text
+                        and "[Static" not in name.text
                         and "[Condition" not in name.text
                         and "[Situation" not in name.text
+                        and "[Stay" not in name.text
+                        and "A-]" not in name.text
+                        and "B]" not in name.text
+                        and "B-]" not in name.text
+                        and "C]" not in name.text
+                        and "C-]" not in name.text
                         and "[C]" not in name.text
                         and "[U]" not in name.text
                         and "[R]" not in name.text
@@ -312,13 +322,13 @@ async def cardrush(num):
 
             except:
                 print("Non-Card detected")
-                # break
+                break
 
 
         if not nextButton:
             break
 
-        time.sleep(random.uniform(2, 5))
+        # time.sleep(random.uniform(2, 5))
         print("Next Page")
 
             # if exit_loops:
@@ -376,8 +386,22 @@ async def torecacamp(num):
             )
 
             # Price
+            # price_tag = item.select_one("span.price")
+            # price = price_tag.get_text(strip=True) if price_tag else None
+
             price_tag = item.select_one("span.price")
-            price = price_tag.get_text(strip=True) if price_tag else None
+            if price_tag:
+                price_text = price_tag.get_text(strip=True).replace(",", "").replace(".", "")
+                # Get all digit sequences from the text
+                numbers = re.findall(r"\d+", price_text)
+                if numbers:
+                    # if there's a range like 34800～49800, take the last one
+                    price = int(numbers[-1])
+                else:
+                    price = None
+            else:
+                price = None
+
 
             # Quantity / Inventory
             qty_tag = item.select_one("span.product-item__inventory")
@@ -404,7 +428,8 @@ async def torecacamp(num):
 
                 print({
                     "name": name.text,
-                    "price": re.search(r"[\d,]+", price).group().replace(",", ""),
+                    # "price": re.search(r"[\d,]+", price).group().replace(",", ""),
+                    "price": str(price),
                     "quantity": stock,
                     "link": "https://torecacamp-pokemon.com" + link,
                     "card_number": re.search(r"(\d+)/\d+", name.text).group(1)
@@ -416,7 +441,8 @@ async def torecacamp(num):
                 torecaCampArray.append(
                     pokemon_card.PokemonCard(
                         name.text,
-                        re.search(r"[\d,]+", price).group().replace(",", ""),
+                        # re.search(r"[\d,]+", price).group().replace(",", ""),
+                        price,
                         stock,
                         "https://torecacamp-pokemon.com" + link,
                         re.search(r"(\d+)/\d+", name.text).group(1)
@@ -425,7 +451,8 @@ async def torecacamp(num):
 
                 params = (
                     name.text,
-                    re.sub(r"\D", "", price),
+                    # re.sub(r"\D", "", price),
+                    price,
                     stock,
                     "https://torecacamp-pokemon.com" + link,
                     re.search(r"(\d+)/\d+", name.text).group(1),
@@ -449,7 +476,7 @@ async def torecacamp(num):
             finalExit = True
             break
 
-        time.sleep(random.uniform(2, 5))
+        # time.sleep(random.uniform(2, 5))
 
 
 
@@ -563,7 +590,7 @@ async def hareruya(num):
                 print("Non-Card Detected")
 
         if next_button:
-            time.sleep(random.uniform(2, 5))
+            # time.sleep(random.uniform(2, 5))
             print("Next Page")
         else:
             print("No more pages")
@@ -749,6 +776,7 @@ def websiteLinks():
 
 
 
+        # cursor.execute("SELECT card_set, link, set_amount, set_release_date FROM price_charting_sites WHERE card_set LIKE '%m1%'")
         cursor.execute("SELECT card_set, link, set_amount, set_release_date FROM price_charting_sites")
         priceChartingRows = cursor.fetchall()
         for priceChartingCard in priceChartingRows:
