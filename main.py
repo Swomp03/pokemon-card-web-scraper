@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 import os
 
 
-load_dotenv()
+
 c = CurrencyConverter()
 
 HEADERS = {
@@ -92,6 +92,26 @@ hareruyaLinks = [
 #
 cardMarketArray = []
 
+# Comment this out when pushing to the VM
+load_dotenv()
+
+
+# Uncomment this when pushing to VM
+# load_dotenv("/root/apis/BeautifulSoupPokemon/.env")
+# DB_USER = os.getenv("MYDBUSER")
+# DB_PASSWORD = os.getenv("MYDBPASSWORD")
+# DB_HOST = os.getenv("MYDBHOST")
+# DB_PORT = os.getenv("MYDBPORT")
+# DB_NAME = os.getenv("MYDBDATABASE")
+# connection = psycopg2.connect(
+#     database = str(os.getenv("MYDBDATABASE")),
+#     user = str(os.getenv("MYDBUSER")),
+#     password = str(os.getenv("MYDBPASSWORD")),
+#     host = str(os.getenv("MYDBHOST")),
+#     port = str(os.getenv("MYDBPORT")),
+# )
+
+# Comment this when pushing to VM
 connection = psycopg2.connect(
     database = str(os.getenv("DATABASE")),
     user = str(os.getenv("USER")),
